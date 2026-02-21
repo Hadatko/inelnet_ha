@@ -1,0 +1,33 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configure INELNET",
+        "description": "Enter the controller IP address and channel numbers (single number or comma-separated, e.g. 1 or 1,2,3).",
+        "data": {
+          "host": "IP address",
+          "channels": "Channels"
+        },
+        "data_description": {
+          "host": "e.g. 192.168.1.67",
+          "channels": "Channel numbers comma-separated (1-16)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the controller. Check IP and network.",
+      "invalid_host": "Invalid IP address or hostname.",
+      "invalid_channels": "Invalid channels. Enter numbers 1-16 comma-separated."
+    },
+    "abort": {
+      "already_configured": "This instance is already configured."
+    }
+  },
+  "device_automation": {
+    "action_type": {
+      "up_short": "Short move up",
+      "down_short": "Short move down",
+      "program": "Programming mode (pair remote)"
+    }
+  }
+}
