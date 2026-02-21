@@ -1,0 +1,7 @@
+# Test dependencies for INELNET Blinds integration.
+# Install: pip install -r requirements_test.txt
+# Run tests: pytest tests/ -v
+
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-homeassistant-custom-component>=0.13.0

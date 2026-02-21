@@ -30,6 +30,17 @@ For full setup steps see **[Setup guide →](https://github.com/Hadatko/inelnet_
 
 The integration sends POST requests to `http://<host>/msg.htm` with body `send_ch=<channel>&send_act=<code>`. Codes: 144 stop, 160 up, 176 up_short, 192 down, 208 down_short, 224 program.
 
+## Testing
+
+Tests follow the same style as Home Assistant core integrations (pytest, `pytest-homeassistant-custom-component`).
+
+```bash
+pip install -r requirements_test.txt
+pytest tests/ -v
+```
+
+Requires a compatible Home Assistant core environment (e.g. install `homeassistant` in the same venv or use the same Python as HA). The `pytest-homeassistant-custom-component` package provides the `hass` and `enable_custom_integrations` fixtures.
+
 ---
 
 If anybody is interested in supporting my "sleepless" nights (working mostly between 23:00-3:00) on different projects press:
