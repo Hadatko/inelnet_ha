@@ -77,12 +77,13 @@ class InelnetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     else:
                         errors["base"] = "invalid_channels"
                 else:
-                    # Unique id per host to allow only one config per controller
-                    await self.async_set_unique_id(host)
+                    # Unique id per host + channels so multiple configs can use the same IP
+                    unique_id = f"{host}-{','.join(str(c) for c in channels)}"
+                    await self.async_set_unique_id(unique_id)
                     self._abort_if_unique_id_configured()
 
                     return self.async_create_entry(
-                        title=f"INELNET {host}",
+                        title=f"INELNET {host} (ch {','.join(str(c) for c in channels)})",
                         data={
                             CONF_HOST: host,
                             CONF_CHANNELS: channels,

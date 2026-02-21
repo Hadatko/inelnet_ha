@@ -32,7 +32,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def send_command(host: str, channel: int, act: int) -> bool:
-    """Send REST command to INELNET controller."""
+    """Send REST command to a single channel. One channel per call, never broadcast."""
     url = f"http://{host}/msg.htm"
     payload = f"send_ch={channel}&send_act={act}"
     try:
@@ -54,20 +54,20 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up INELNET covers from a config entry."""
+    """Set up one cover per channel. Each channel is one device; no group control."""
     data = hass.data[DOMAIN][entry.entry_id]
     host = data[CONF_HOST]
     channels = data[CONF_CHANNELS]
 
     entities = [
-        InelnetCoverEntity(entry, host, ch)
+        InelnetCoverEntity(entry, host, ch)  # one entity per channel, never all at once
         for ch in channels
     ]
     async_add_entities(entities)
 
 
 class InelnetCoverEntity(CoverEntity):
-    """Representation of an INELNET blind channel."""
+    """One cover entity for a single channel. One device per channel; commands target this channel only."""
 
     _attr_device_class = CoverDeviceClass.SHUTTER
     _attr_supported_features = (

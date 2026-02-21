@@ -1,4 +1,4 @@
-"""INELNET Blinds integration."""
+"""INELNET Blinds integration. One device per channel; no multi-channel (group) control."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from .const import CONF_CHANNELS, CONF_HOST, DOMAIN
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up INELNET from a config entry."""
+    """Set up INELNET: one device per channel, each entity controls a single channel only."""
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
         CONF_HOST: entry.data[CONF_HOST],

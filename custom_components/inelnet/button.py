@@ -1,4 +1,4 @@
-"""Button platform for INELNET Blinds – one entity per action."""
+"""Button platform for INELNET Blinds. One device per channel; each button controls only that channel."""
 
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up INELNET button entities from a config entry."""
+    """Set up three buttons per channel. Each channel is one device; each button acts on that channel only."""
     data = hass.data[DOMAIN][entry.entry_id]
     host = data[CONF_HOST]
     channels = data[CONF_CHANNELS]
