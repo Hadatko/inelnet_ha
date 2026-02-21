@@ -3,9 +3,9 @@
   "name": "INELNET Blinds",
   "codeowners": ["@kuhadatko"],
   "config_flow": true,
-  "documentation": "https://github.com/kuhadatko/inelnet_ha",
+  "documentation": "https://github.com/Hadatko/inelnet_ha",
   "integration_type": "device",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/kuhadatko/inelnet_ha/issues",
+  "issue_tracker": "https://github.com/Hadatko/inelnet_ha/issues",
   "version": "1.0.0"
 }

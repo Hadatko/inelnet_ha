@@ -4,11 +4,21 @@ Home Assistant integration for controlling INELNET blinds via REST API. You defi
 
 ## Installation
 
+For full setup steps see **[Setup guide →](https://github.com/Hadatko/inelnet_ha#)**.
+
 1. Copy the `custom_components/inelnet` folder into your Home Assistant `<config>/custom_components/inelnet` (or clone the repo and symlink).
 2. Restart Home Assistant.
 3. **Settings → Devices & services → Add integration** → search for "INELNET Blinds".
-4. Enter the controller **IP address** (e.g. `192.168.1.67`) and **all channel numbers** comma-separated (e.g. `1` or `1,2,3`). Channels are 1–16. One device per channel is created.
-5. Each device has **4 entities**: the cover (open/close/stop) plus three buttons (Short move up, Short move down, Programming mode).
+4. Enter the controller **IP address** (e.g. `192.168.1.67`) and **all channel numbers** comma-separated (e.g. `1` or `1,2,3`). Channels are 1–16. One device per channel is created.  
+   **Channel definition** (entered when adding the integration):
+
+   ![Channel definition when adding integration](img/channelDef.jpg)
+
+5. Optionally assign each channel to a room in Home Assistant (**Channel → Room**):
+
+   ![Assigning channels to rooms](img/channelRoom.png)
+
+6. Each device has **4 entities**: the cover (open/close/stop) plus three buttons (Short move up, Short move down, Programming mode).
 
 ## Usage
 
