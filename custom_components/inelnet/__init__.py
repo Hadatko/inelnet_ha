@@ -17,7 +17,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         CONF_CHANNELS: entry.data[CONF_CHANNELS],
     }
 
-    await hass.config_entries.async_forward_entry_setups(entry, [Platform.COVER])
+    await hass.config_entries.async_forward_entry_setups(
+        entry, [Platform.COVER, Platform.BUTTON]
+    )
 
     return True
 
@@ -25,7 +27,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     if unload_ok := await hass.config_entries.async_unload_platforms(
-        entry, [Platform.COVER]
+        entry, [Platform.COVER, Platform.BUTTON]
     ):
         hass.data[DOMAIN].pop(entry.entry_id, None)
     return unload_ok

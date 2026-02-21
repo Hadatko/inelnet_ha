@@ -1,22 +1,20 @@
 # inelnet_ha
 
-Home Assistant integration for controlling INELNET blinds via REST API. Each controller channel is a separate device (cover) with open/close/stop; additional actions (short move, programming mode) are available as Device Actions in automations and scenes.
+Home Assistant integration for controlling INELNET blinds via REST API. You define all channels in one setup step (IP + comma-separated channel list). Each channel becomes one device with four entities: one cover (open/close/stop) and three buttons (Short move up, Short move down, Programming mode).
 
 ## Installation
 
 1. Copy the `custom_components/inelnet` folder into your Home Assistant `<config>/custom_components/inelnet` (or clone the repo and symlink).
 2. Restart Home Assistant.
 3. **Settings → Devices & services → Add integration** → search for "INELNET Blinds".
-4. Enter the controller **IP address** (e.g. `192.168.1.67`) and **channels** comma-separated (e.g. `1` or `1,2,3`). Channels are numbers 1–16.
-5. After saving, one device with a cover entity is created per channel.
+4. Enter the controller **IP address** (e.g. `192.168.1.67`) and **all channel numbers** comma-separated (e.g. `1` or `1,2,3`). Channels are 1–16. One device per channel is created.
+5. Each device has **4 entities**: the cover (open/close/stop) plus three buttons (Short move up, Short move down, Programming mode).
 
 ## Usage
 
-- **Cover** – standard open/close/stop (UI buttons or services `cover.open_cover`, `cover.close_cover`, `cover.stop_cover`).
-- **Device Actions** – in **Automation / Scene** when choosing a device action you also have:
-  - **Short move up** (`up_short`)
-  - **Short move down** (`down_short`)
-  - **Programming mode** (`program`) – for pairing a remote control
+- **Cover** – open/close/stop via UI or `cover.open_cover`, `cover.close_cover`, `cover.stop_cover`.
+- **Buttons** – one entity per action: Short move up, Short move down, Programming mode (for pairing a remote). Use in dashboards or automations.
+- **Device Actions** – the same actions are also available when building automations/scenes as device actions.
 
 ## Technical details
 
