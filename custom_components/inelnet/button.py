@@ -68,6 +68,8 @@ class InelnetButtonEntity(ButtonEntity):
     """One button entity for a single INELNET action (short up, short down, program)."""
 
     _attr_has_entity_name = True
+    # Disabled by default so the user must enable these entities explicitly
+    _attr_entity_registry_enabled_default = False
 
     def __init__(
         self,
