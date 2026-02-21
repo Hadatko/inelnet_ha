@@ -30,7 +30,6 @@ def mock_config_entry() -> ConfigEntry:
     )
 
 
-@pytest.mark.asyncio
 @pytest.mark.usefixtures("enable_custom_integrations")
 async def test_setup_entry_stores_config(
     hass: HomeAssistant, mock_config_entry: ConfigEntry
@@ -48,7 +47,6 @@ async def test_setup_entry_stores_config(
     assert hass.data[DOMAIN][mock_config_entry.entry_id][CONF_CHANNELS] == [1, 2]
 
 
-@pytest.mark.asyncio
 @pytest.mark.usefixtures("enable_custom_integrations")
 async def test_unload_entry_removes_config(
     hass: HomeAssistant, mock_config_entry: ConfigEntry

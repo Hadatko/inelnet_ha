@@ -91,4 +91,4 @@ class InelnetButtonEntity(ButtonEntity):
 
     async def async_press(self) -> None:
         """Send the REST command for this action."""
-        await send_command(self._host, self._channel, self._action_code)
+        await send_command(self.hass, self._host, self._channel, self._action_code)

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.config_entries import ConfigEntry
@@ -37,17 +37,15 @@ def cover_config_entry() -> ConfigEntry:
     )
 
 
-@pytest.mark.asyncio
 async def test_send_command_payload() -> None:
-    """Test send_command uses correct URL and payload."""
+    """Test send_command uses correct URL and payload with shared session."""
     post_calls = []
+    mock_hass = MagicMock()
 
     class MockResponse:
         status = 200
 
     class AsyncCtx:
-        """Async context manager that yields MockResponse."""
-
         async def __aenter__(self):
             return MockResponse()
 
@@ -66,10 +64,10 @@ async def test_send_command_payload() -> None:
         post = capture_post
 
     with patch(
-        "custom_components.inelnet.cover.aiohttp.ClientSession",
+        "custom_components.inelnet.cover.async_get_clientsession",
         return_value=MockSession(),
     ):
-        result = await send_command("10.0.0.1", 3, ACT_STOP)
+        result = await send_command(mock_hass, "10.0.0.1", 3, ACT_STOP)
 
     assert result is True
     assert len(post_calls) == 1
@@ -89,43 +87,43 @@ def test_cover_entity_attributes(cover_config_entry: ConfigEntry) -> None:
     assert entity.is_closed is None
 
 
-@pytest.mark.asyncio
 async def test_cover_open_sends_up_command(
     cover_config_entry: ConfigEntry,
 ) -> None:
     """Test async_open_cover calls send_command with ACT_UP."""
     entity = InelnetCoverEntity(cover_config_entry, "192.168.1.67", 1)
+    entity.hass = MagicMock()
     with patch(
         "custom_components.inelnet.cover.send_command",
         new_callable=AsyncMock,
     ) as mock_send:
         await entity.async_open_cover()
-    mock_send.assert_called_once_with("192.168.1.67", 1, ACT_UP)
+    mock_send.assert_called_once_with(entity.hass, "192.168.1.67", 1, ACT_UP)
 
 
-@pytest.mark.asyncio
 async def test_cover_close_sends_down_command(
     cover_config_entry: ConfigEntry,
 ) -> None:
     """Test async_close_cover calls send_command with ACT_DOWN."""
     entity = InelnetCoverEntity(cover_config_entry, "192.168.1.67", 1)
+    entity.hass = MagicMock()
     with patch(
         "custom_components.inelnet.cover.send_command",
         new_callable=AsyncMock,
     ) as mock_send:
         await entity.async_close_cover()
-    mock_send.assert_called_once_with("192.168.1.67", 1, ACT_DOWN)
+    mock_send.assert_called_once_with(entity.hass, "192.168.1.67", 1, ACT_DOWN)
 
 
-@pytest.mark.asyncio
 async def test_cover_stop_sends_stop_command(
     cover_config_entry: ConfigEntry,
 ) -> None:
     """Test async_stop_cover calls send_command with ACT_STOP."""
     entity = InelnetCoverEntity(cover_config_entry, "192.168.1.67", 1)
+    entity.hass = MagicMock()
     with patch(
         "custom_components.inelnet.cover.send_command",
         new_callable=AsyncMock,
     ) as mock_send:
         await entity.async_stop_cover()
-    mock_send.assert_called_once_with("192.168.1.67", 1, ACT_STOP)
+    mock_send.assert_called_once_with(entity.hass, "192.168.1.67", 1, ACT_STOP)

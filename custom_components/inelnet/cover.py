@@ -13,6 +13,7 @@ from homeassistant.components.cover import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -31,19 +32,21 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
-async def send_command(host: str, channel: int, act: int) -> bool:
-    """Send REST command to a single channel. One channel per call, never broadcast."""
+async def send_command(
+    hass: HomeAssistant, host: str, channel: int, act: int
+) -> bool:
+    """Send REST command to a single channel using the shared HA aiohttp session."""
     url = f"http://{host}/msg.htm"
     payload = f"send_ch={channel}&send_act={act}"
+    session = async_get_clientsession(hass)
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                url,
-                data=payload,
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
-                timeout=aiohttp.ClientTimeout(total=10),
-            ) as resp:
-                return resp.status == 200
+        async with session.post(
+            url,
+            data=payload,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=aiohttp.ClientTimeout(total=10),
+        ) as resp:
+            return resp.status == 200
     except (aiohttp.ClientError, OSError) as e:
         _LOGGER.warning("INELNET command failed %s: %s", url, e)
         return False
@@ -98,15 +101,15 @@ class InelnetCoverEntity(CoverEntity):
 
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open the cover (roll up)."""
-        await send_command(self._host, self._channel, ACT_UP)
+        await send_command(self.hass, self._host, self._channel, ACT_UP)
 
     async def async_close_cover(self, **kwargs: Any) -> None:
         """Close the cover (roll down)."""
-        await send_command(self._host, self._channel, ACT_DOWN)
+        await send_command(self.hass, self._host, self._channel, ACT_DOWN)
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the cover."""
-        await send_command(self._host, self._channel, ACT_STOP)
+        await send_command(self.hass, self._host, self._channel, ACT_STOP)
 
     def get_channel(self) -> int:
         """Return channel number for device actions."""

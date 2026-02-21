@@ -106,4 +106,4 @@ async def async_call_action_from_config(
     if action_type not in ACTION_TYPES:
         return
     code = _action_code(action_type)
-    await send_command(host, channel, code)
+    await send_command(hass, host, channel, code)

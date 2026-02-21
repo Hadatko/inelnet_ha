@@ -77,7 +77,6 @@ class TestIsValidHost:
         assert is_valid_host("256.1.1.1") is True  # regex allows it
 
 
-@pytest.mark.asyncio
 @pytest.mark.usefixtures("enable_custom_integrations")
 async def test_config_flow_user_step_form(hass) -> None:
     """Test the user step shows the form."""
@@ -91,7 +90,6 @@ async def test_config_flow_user_step_form(hass) -> None:
     assert CONF_CHANNELS in result["data_schema"].schema
 
 
-@pytest.mark.asyncio
 @pytest.mark.usefixtures("enable_custom_integrations")
 async def test_config_flow_create_entry(hass) -> None:
     """Test successful config flow creates entry."""
@@ -111,7 +109,6 @@ async def test_config_flow_create_entry(hass) -> None:
     assert result["data"][CONF_CHANNELS] == [1, 2]
 
 
-@pytest.mark.asyncio
 @pytest.mark.usefixtures("enable_custom_integrations")
 async def test_config_flow_invalid_host_shows_error(hass) -> None:
     """Test invalid host shows form with error."""
@@ -127,7 +124,6 @@ async def test_config_flow_invalid_host_shows_error(hass) -> None:
     assert result["errors"]["base"] == "invalid_host"
 
 
-@pytest.mark.asyncio
 @pytest.mark.usefixtures("enable_custom_integrations")
 async def test_config_flow_invalid_channels_shows_error(hass) -> None:
     """Test invalid channels shows form with error."""
@@ -143,7 +139,6 @@ async def test_config_flow_invalid_channels_shows_error(hass) -> None:
     assert result["errors"]["base"] == "invalid_channels"
 
 
-@pytest.mark.asyncio
 @pytest.mark.usefixtures("enable_custom_integrations")
 async def test_config_flow_duplicate_aborts(hass) -> None:
     """Test duplicate host+channels aborts."""

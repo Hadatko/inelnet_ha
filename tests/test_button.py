@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.config_entries import ConfigEntry
@@ -54,7 +54,6 @@ def test_button_entity_attributes(button_config_entry: ConfigEntry) -> None:
     assert entity.entity_registry_enabled_default is False
 
 
-@pytest.mark.asyncio
 async def test_button_press_sends_command(button_config_entry: ConfigEntry) -> None:
     """Test async_press calls send_command with correct action code."""
     entity = InelnetButtonEntity(
@@ -65,15 +64,15 @@ async def test_button_press_sends_command(button_config_entry: ConfigEntry) -> N
         action_code=ACT_PROGRAM,
         entity_name="Programming mode",
     )
+    entity.hass = MagicMock()
     with patch(
         "custom_components.inelnet.button.send_command",
         new_callable=AsyncMock,
     ) as mock_send:
         await entity.async_press()
-    mock_send.assert_called_once_with("192.168.1.67", 1, ACT_PROGRAM)
+    mock_send.assert_called_once_with(entity.hass, "192.168.1.67", 1, ACT_PROGRAM)
 
 
-@pytest.mark.asyncio
 async def test_button_short_down_sends_correct_code(
     button_config_entry: ConfigEntry,
 ) -> None:
@@ -86,9 +85,10 @@ async def test_button_short_down_sends_correct_code(
         action_code=ACT_DOWN_SHORT,
         entity_name="Short move down",
     )
+    entity.hass = MagicMock()
     with patch(
         "custom_components.inelnet.button.send_command",
         new_callable=AsyncMock,
     ) as mock_send:
         await entity.async_press()
-    mock_send.assert_called_once_with("10.0.0.1", 3, ACT_DOWN_SHORT)
+    mock_send.assert_called_once_with(entity.hass, "10.0.0.1", 3, ACT_DOWN_SHORT)
