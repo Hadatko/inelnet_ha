@@ -1,6 +1,7 @@
 {
   "domain": "inelnet",
   "name": "INELNET Blinds",
+  "version": "1.0.0",
   "codeowners": ["@kuhadatko"],
   "config_flow": true,
   "documentation": "https://www.home-assistant.io/integrations/inelnet",
