@@ -2,20 +2,47 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
+import aiohttp
+
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
+from homeassistant.const import CONF_HOST, Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import CONF_CHANNELS, CONF_HOST, DOMAIN
+from .const import CONF_CHANNELS
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+@dataclass
+class InelnetRuntimeData:
+    """Runtime data for INELNET config entry."""
+
+    host: str
+    channels: list[int]
+
+
+type InelnetConfigEntry = ConfigEntry[InelnetRuntimeData]
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: InelnetConfigEntry) -> bool:
     """Set up INELNET: one device per channel, each entity controls a single channel only."""
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = {
-        CONF_HOST: entry.data[CONF_HOST],
-        CONF_CHANNELS: entry.data[CONF_CHANNELS],
-    }
+    host = entry.data[CONF_HOST]
+    channels = entry.data[CONF_CHANNELS]
+
+    session = async_get_clientsession(hass)
+    url = f"http://{host}/msg.htm"
+    try:
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+            if resp.status >= 400:
+                raise ConfigEntryNotReady(
+                    f"Controller at {host} returned {resp.status}"
+                ) from None
+    except (aiohttp.ClientError, OSError) as err:
+        raise ConfigEntryNotReady(f"Cannot connect to controller at {host}") from err
+
+    entry.runtime_data = InelnetRuntimeData(host=host, channels=channels)
 
     await hass.config_entries.async_forward_entry_setups(
         entry, [Platform.COVER, Platform.BUTTON]
@@ -24,10 +51,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: InelnetConfigEntry) -> bool:
     """Unload a config entry."""
-    if unload_ok := await hass.config_entries.async_unload_platforms(
+    return await hass.config_entries.async_unload_platforms(
         entry, [Platform.COVER, Platform.BUTTON]
-    ):
-        hass.data[DOMAIN].pop(entry.entry_id, None)
-    return unload_ok
+    )

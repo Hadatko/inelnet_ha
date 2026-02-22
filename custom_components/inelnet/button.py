@@ -6,29 +6,29 @@ from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
+from . import InelnetConfigEntry
 from .const import (
     ACT_DOWN_SHORT,
     ACT_PROGRAM,
     ACT_UP_SHORT,
-    CONF_CHANNELS,
-    CONF_HOST,
+    DEVICE_NAME_CHANNEL_TEMPLATE,
     DOMAIN,
 )
 from .cover import send_command
 
-# Button kinds: (unique_id_suffix, action_code, entity_name)
-BUTTON_UP_SHORT = ("short_up", ACT_UP_SHORT, "Short move up")
-BUTTON_DOWN_SHORT = ("short_down", ACT_DOWN_SHORT, "Short move down")
-BUTTON_PROGRAM = ("program", ACT_PROGRAM, "Programming mode")
+# Button kinds: (unique_id_suffix, action_code) – name from entity translation key
+BUTTON_UP_SHORT = ("short_up", ACT_UP_SHORT)
+BUTTON_DOWN_SHORT = ("short_down", ACT_DOWN_SHORT)
+BUTTON_PROGRAM = ("program", ACT_PROGRAM)
 
 
 def _device_info(entry: ConfigEntry, channel: int) -> DeviceInfo:
     """Build DeviceInfo for a channel (same as cover so entities share one device)."""
     return DeviceInfo(
         identifiers={(DOMAIN, f"{entry.entry_id}-ch{channel}")},
-        name=f"Blind channel {channel}",
+        name=DEVICE_NAME_CHANNEL_TEMPLATE.format(channel=channel),
         manufacturer="INELNET",
         model="Blinds controller",
     )
@@ -36,17 +36,17 @@ def _device_info(entry: ConfigEntry, channel: int) -> DeviceInfo:
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    entry: InelnetConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up three buttons per channel. Each channel is one device; each button acts on that channel only."""
-    data = hass.data[DOMAIN][entry.entry_id]
-    host = data[CONF_HOST]
-    channels = data[CONF_CHANNELS]
+    data = entry.runtime_data
+    host = data.host
+    channels = data.channels
 
     entities: list[InelnetButtonEntity] = []
     for channel in channels:
-        for suffix, act_code, entity_name in (
+        for translation_key, act_code in (
             BUTTON_UP_SHORT,
             BUTTON_DOWN_SHORT,
             BUTTON_PROGRAM,
@@ -56,9 +56,9 @@ async def async_setup_entry(
                     entry=entry,
                     host=host,
                     channel=channel,
-                    unique_id_suffix=suffix,
+                    unique_id_suffix=translation_key,
                     action_code=act_code,
-                    entity_name=entity_name,
+                    translation_key=translation_key,
                 )
             )
     async_add_entities(entities)
@@ -78,7 +78,7 @@ class InelnetButtonEntity(ButtonEntity):
         channel: int,
         unique_id_suffix: str,
         action_code: int,
-        entity_name: str,
+        translation_key: str,
     ) -> None:
         """Initialize the button."""
         self._entry = entry
@@ -86,7 +86,7 @@ class InelnetButtonEntity(ButtonEntity):
         self._channel = channel
         self._action_code = action_code
         self._attr_unique_id = f"{entry.entry_id}-ch{channel}-{unique_id_suffix}"
-        self._attr_name = entity_name
+        self._attr_translation_key = translation_key
         self._attr_device_info = _device_info(entry, channel)
 
     async def async_press(self) -> None:

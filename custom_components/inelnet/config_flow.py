@@ -5,12 +5,15 @@ from __future__ import annotations
 import re
 from typing import Any
 
+import aiohttp
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.data_entry_flow import FlowResult
+from homeassistant.config_entries import ConfigFlowResult
+from homeassistant.const import CONF_HOST
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import CONF_CHANNELS, CONF_HOST, DOMAIN
+from .const import CONF_CHANNELS, DOMAIN
 
 
 def parse_channels(value: str) -> list[int]:
@@ -22,8 +25,8 @@ def parse_channels(value: str) -> list[int]:
     for p in parts:
         try:
             ch = int(p)
-        except ValueError:
-            raise ValueError("invalid")
+        except ValueError as err:
+            raise ValueError("invalid") from err
         if ch < 1 or ch > 16:
             raise ValueError("out_of_range")
         if ch in channels:
@@ -49,10 +52,11 @@ class InelnetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for INELNET Blinds."""
 
     VERSION = 1
+    MINOR_VERSION = 1
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle the initial step."""
         errors: dict[str, str] = {}
 
@@ -65,30 +69,34 @@ class InelnetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 try:
                     channels = parse_channels(channels_str)
-                except ValueError as e:
-                    if str(e) == "empty":
-                        errors["base"] = "invalid_channels"
-                    elif str(e) == "invalid":
-                        errors["base"] = "invalid_channels"
-                    elif str(e) == "out_of_range":
-                        errors["base"] = "invalid_channels"
-                    elif str(e) == "duplicate":
-                        errors["base"] = "invalid_channels"
-                    else:
-                        errors["base"] = "invalid_channels"
+                except ValueError:
+                    errors["base"] = "invalid_channels"
                 else:
-                    # Unique id per host + channels so multiple configs can use the same IP
-                    unique_id = f"{host}-{','.join(str(c) for c in channels)}"
-                    await self.async_set_unique_id(unique_id)
-                    self._abort_if_unique_id_configured()
+                    # Test connection to controller before creating entry
+                    session = async_get_clientsession(self.hass)
+                    url = f"http://{host}/msg.htm"
+                    try:
+                        async with session.get(
+                            url, timeout=aiohttp.ClientTimeout(total=10)
+                        ) as resp:
+                            if resp.status >= 400:
+                                errors["base"] = "cannot_connect"
+                            else:
+                                unique_id = (
+                                    f"{host}-{','.join(str(c) for c in channels)}"
+                                )
+                                await self.async_set_unique_id(unique_id)
+                                self._abort_if_unique_id_configured()
 
-                    return self.async_create_entry(
-                        title=f"INELNET {host} (ch {','.join(str(c) for c in channels)})",
-                        data={
-                            CONF_HOST: host,
-                            CONF_CHANNELS: channels,
-                        },
-                    )
+                                return self.async_create_entry(
+                                    title=f"INELNET {host} (ch {','.join(str(c) for c in channels)})",
+                                    data={
+                                        CONF_HOST: host,
+                                        CONF_CHANNELS: channels,
+                                    },
+                                )
+                    except aiohttp.ClientError, OSError:
+                        errors["base"] = "cannot_connect"
 
         data_schema = vol.Schema(
             {

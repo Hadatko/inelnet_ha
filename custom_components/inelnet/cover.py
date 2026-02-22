@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 import aiohttp
+
 from homeassistant.components.cover import (
     CoverDeviceClass,
     CoverEntity,
@@ -15,27 +16,16 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .const import (
-    ACT_DOWN,
-    ACT_DOWN_SHORT,
-    ACT_PROGRAM,
-    ACT_STOP,
-    ACT_UP,
-    ACT_UP_SHORT,
-    CONF_CHANNELS,
-    CONF_HOST,
-    DOMAIN,
-)
+from . import InelnetConfigEntry
+from .const import ACT_DOWN, ACT_STOP, ACT_UP, DEVICE_NAME_CHANNEL_TEMPLATE, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def send_command(
-    hass: HomeAssistant, host: str, channel: int, act: int
-) -> bool:
-    """Send REST command to a single channel using the shared HA aiohttp session."""
+async def send_command(hass: HomeAssistant, host: str, channel: int, act: int) -> bool:
+    """Send REST command to a single channel. One channel per call, never broadcast."""
     url = f"http://{host}/msg.htm"
     payload = f"send_ch={channel}&send_act={act}"
     session = async_get_clientsession(hass)
@@ -54,13 +44,13 @@ async def send_command(
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    entry: InelnetConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up one cover per channel. Each channel is one device; no group control."""
-    data = hass.data[DOMAIN][entry.entry_id]
-    host = data[CONF_HOST]
-    channels = data[CONF_CHANNELS]
+    data = entry.runtime_data
+    host = data.host
+    channels = data.channels
 
     entities = [
         InelnetCoverEntity(entry, host, ch)  # one entity per channel, never all at once
@@ -74,9 +64,7 @@ class InelnetCoverEntity(CoverEntity):
 
     _attr_device_class = CoverDeviceClass.SHUTTER
     _attr_supported_features = (
-        CoverEntityFeature.OPEN
-        | CoverEntityFeature.CLOSE
-        | CoverEntityFeature.STOP
+        CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE | CoverEntityFeature.STOP
     )
     _attr_has_entity_name = True
     _attr_name = None
@@ -89,13 +77,13 @@ class InelnetCoverEntity(CoverEntity):
         self._attr_unique_id = f"{entry.entry_id}-ch{channel}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{entry.entry_id}-ch{channel}")},
-            name=f"Blind channel {channel}",
+            name=DEVICE_NAME_CHANNEL_TEMPLATE.format(channel=channel),
             manufacturer="INELNET",
             model="Blinds controller",
         )
 
     @property
-    def is_closed(self) -> None:
+    def is_closed(self) -> bool | None:
         """State unknown – device does not report position."""
         return None
 
@@ -110,7 +98,3 @@ class InelnetCoverEntity(CoverEntity):
     async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the cover."""
         await send_command(self.hass, self._host, self._channel, ACT_STOP)
-
-    def get_channel(self) -> int:
-        """Return channel number for device actions."""
-        return self._channel

@@ -6,11 +6,10 @@ from typing import Any
 
 import voluptuous as vol
 
-from homeassistant.components.device_automation import async_validate_entity_schema
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import config_validation as cv, device_registry as dr
-from homeassistant.helpers.typing import ConfigType
+from homeassistant.helpers.typing import ConfigType, TemplateVarsType
 
 from .const import (
     ACT_DOWN_SHORT,
@@ -19,7 +18,6 @@ from .const import (
     ACTION_DOWN_SHORT,
     ACTION_PROGRAM,
     ACTION_UP_SHORT,
-    CONF_HOST,
     DOMAIN,
 )
 from .cover import send_command
@@ -46,7 +44,9 @@ def _action_code(action_type: str) -> int:
     }[action_type]
 
 
-def _device_to_host_and_channel(hass: HomeAssistant, device_id: str) -> tuple[str, int] | None:
+def _device_to_host_and_channel(
+    hass: HomeAssistant, device_id: str
+) -> tuple[str, int] | None:
     """Resolve device_id to (host, channel). Returns None if not our device."""
     dev_reg = dr.async_get(hass)
     device = dev_reg.async_get(device_id)
@@ -58,15 +58,18 @@ def _device_to_host_and_channel(hass: HomeAssistant, device_id: str) -> tuple[st
         try:
             _, ch_str = str(identifier[1]).rsplit("-ch", 1)
             channel = int(ch_str)
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             continue
-        entry_id = list(device.config_entries)[0]
-        data = hass.data.get(DOMAIN, {}).get(entry_id)
-        if not data:
-            continue
-        host = data.get(CONF_HOST)
-        if host:
-            return (host, channel)
+        for entry_id in device.config_entries:
+            entry = hass.config_entries.async_get_entry(entry_id)
+            if not entry or entry.domain != DOMAIN:
+                continue
+            if not getattr(entry, "runtime_data", None):
+                continue
+            data = entry.runtime_data
+            host = getattr(data, "host", None)
+            if host:
+                return (host, channel)
     return None
 
 
@@ -87,14 +90,14 @@ async def async_get_actions(
 async def async_validate_action_config(
     hass: HomeAssistant, config: ConfigType
 ) -> ConfigType:
-    """Validate action config."""
-    return await async_validate_entity_schema(hass, config, ACTION_SCHEMA)
+    """Validate action config (device_id-based; no entity_id)."""
+    return ACTION_SCHEMA(config)
 
 
 async def async_call_action_from_config(
     hass: HomeAssistant,
     config: ConfigType,
-    variables: dict[str, Any],
+    variables: TemplateVarsType,
     context: Context | None,
 ) -> None:
     """Execute device action."""

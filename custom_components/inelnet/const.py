@@ -2,8 +2,10 @@
 
 DOMAIN = "inelnet"
 
-CONF_HOST = "host"
 CONF_CHANNELS = "channels"
+
+# Device name template for per-channel devices (identifier only, not user-facing)
+DEVICE_NAME_CHANNEL_TEMPLATE = "INELNET Blinds channel {channel}"
 
 # REST API action codes (send_act parameter)
 ACT_STOP = 144
