@@ -1,0 +1,8 @@
+# Issue template picker. See https://developers.home-assistant.io/docs/api_lib_index/
+# For integration (Home Assistant) bugs, use Home Assistant Core issues.
+
+blank_issues_enabled: true
+contact_links:
+  - name: Home Assistant Core (integration bugs)
+    url: https://github.com/home-assistant/core/issues
+    about: Report issues with the INELNET Blinds integration in Home Assistant here.

@@ -9,14 +9,12 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from custom_components.inelnet.const import (
-    ACT_DOWN,
-    ACT_STOP,
-    ACT_UP,
     CONF_CHANNELS,
     CONF_HOST,
     DOMAIN,
 )
-from custom_components.inelnet.cover import InelnetCoverEntity, send_command
+from custom_components.inelnet.cover import InelnetCoverEntity
+from inelnet_api import InelnetChannel
 
 
 @pytest.fixture
@@ -37,93 +35,65 @@ def cover_config_entry() -> ConfigEntry:
     )
 
 
-async def test_send_command_payload() -> None:
-    """Test send_command uses correct URL and payload with shared session."""
-    post_calls = []
-    mock_hass = MagicMock()
-
-    class MockResponse:
-        status = 200
-
-    class AsyncCtx:
-        async def __aenter__(self):
-            return MockResponse()
-
-        async def __aexit__(self, *args):
-            pass
-
-    def capture_post(self, url, *args, data=None, **kwargs):
-        post_calls.append((url, data))
-        return AsyncCtx()
-
-    class MockSession:
-        async def __aenter__(self):
-            return self
-        async def __aexit__(self, *args):
-            pass
-        post = capture_post
-
-    with patch(
-        "custom_components.inelnet.cover.async_get_clientsession",
-        return_value=MockSession(),
-    ):
-        result = await send_command(mock_hass, "10.0.0.1", 3, ACT_STOP)
-
-    assert result is True
-    assert len(post_calls) == 1
-    assert post_calls[0][0] == "http://10.0.0.1/msg.htm"
-    assert post_calls[0][1] == "send_ch=3&send_act=144"
-
-
 def test_cover_entity_attributes(cover_config_entry: ConfigEntry) -> None:
     """Test cover entity has correct attributes and device info."""
-    entity = InelnetCoverEntity(cover_config_entry, "192.168.1.67", 1)
+    client = InelnetChannel("192.168.1.67", 1)
+    entity = InelnetCoverEntity(cover_config_entry, client)
     assert entity.unique_id == "test-cover-entry-ch1"
     assert entity.device_info is not None
     identifiers = getattr(entity.device_info, "identifiers", entity.device_info.get("identifiers"))
     assert identifiers == {(DOMAIN, "test-cover-entry-ch1")}
     name = getattr(entity.device_info, "name", entity.device_info.get("name"))
-    assert name == "Blind channel 1"
+    assert name == "INELNET Blinds channel 1"
     assert entity.is_closed is None
 
 
 async def test_cover_open_sends_up_command(
     cover_config_entry: ConfigEntry,
 ) -> None:
-    """Test async_open_cover calls send_command with ACT_UP."""
-    entity = InelnetCoverEntity(cover_config_entry, "192.168.1.67", 1)
+    """Test async_open_cover calls client.up with session."""
+    client = InelnetChannel("192.168.1.67", 1)
+    client.up = AsyncMock(return_value=True)
+    entity = InelnetCoverEntity(cover_config_entry, client)
     entity.hass = MagicMock()
+    mock_session = MagicMock()
     with patch(
-        "custom_components.inelnet.cover.send_command",
-        new_callable=AsyncMock,
-    ) as mock_send:
+        "custom_components.inelnet.cover.async_get_clientsession",
+        return_value=mock_session,
+    ):
         await entity.async_open_cover()
-    mock_send.assert_called_once_with(entity.hass, "192.168.1.67", 1, ACT_UP)
+    client.up.assert_called_once_with(session=mock_session)
 
 
 async def test_cover_close_sends_down_command(
     cover_config_entry: ConfigEntry,
 ) -> None:
-    """Test async_close_cover calls send_command with ACT_DOWN."""
-    entity = InelnetCoverEntity(cover_config_entry, "192.168.1.67", 1)
+    """Test async_close_cover calls client.down with session."""
+    client = InelnetChannel("192.168.1.67", 1)
+    client.down = AsyncMock(return_value=True)
+    entity = InelnetCoverEntity(cover_config_entry, client)
     entity.hass = MagicMock()
+    mock_session = MagicMock()
     with patch(
-        "custom_components.inelnet.cover.send_command",
-        new_callable=AsyncMock,
-    ) as mock_send:
+        "custom_components.inelnet.cover.async_get_clientsession",
+        return_value=mock_session,
+    ):
         await entity.async_close_cover()
-    mock_send.assert_called_once_with(entity.hass, "192.168.1.67", 1, ACT_DOWN)
+    client.down.assert_called_once_with(session=mock_session)
 
 
 async def test_cover_stop_sends_stop_command(
     cover_config_entry: ConfigEntry,
 ) -> None:
-    """Test async_stop_cover calls send_command with ACT_STOP."""
-    entity = InelnetCoverEntity(cover_config_entry, "192.168.1.67", 1)
+    """Test async_stop_cover calls client.stop with session."""
+    client = InelnetChannel("192.168.1.67", 1)
+    client.stop = AsyncMock(return_value=True)
+    entity = InelnetCoverEntity(cover_config_entry, client)
     entity.hass = MagicMock()
+    mock_session = MagicMock()
     with patch(
-        "custom_components.inelnet.cover.send_command",
-        new_callable=AsyncMock,
-    ) as mock_send:
+        "custom_components.inelnet.cover.async_get_clientsession",
+        return_value=mock_session,
+    ):
         await entity.async_stop_cover()
-    mock_send.assert_called_once_with(entity.hass, "192.168.1.67", 1, ACT_STOP)
+    client.stop.assert_called_once_with(session=mock_session)

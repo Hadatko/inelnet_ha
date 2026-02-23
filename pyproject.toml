@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "inelnet-api"
+version = "1.0.1"
+description = "Async client for INELNET blinds controller REST API (one object per channel)."
+readme = "inelnet_api/README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "Hadatko" }
+]
+keywords = ["inelnet", "blinds", "roller", "rest", "async", "home-assistant"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Home Automation",
+]
+dependencies = [
+    "aiohttp>=3.8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+]
+
+[project.urls]
+Homepage = "https://github.com/Hadatko/inelnet_ha"
+Repository = "https://github.com/Hadatko/inelnet_ha"
+Issues = "https://github.com/Hadatko/inelnet_ha/issues"
+Documentation = "https://github.com/Hadatko/inelnet_ha#readme"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["inelnet_api*"]
+
+[tool.setuptools.package-dir]
+"" = "."
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests_inelnet_api"]

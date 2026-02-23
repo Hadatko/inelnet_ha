@@ -1,0 +1,36 @@
+# Publish inelnet-api to PyPI when a version tag is pushed.
+# See https://developers.home-assistant.io/docs/api_lib_index/
+# Tag format: v1.0.0 (must match version in pyproject.toml and inelnet_api/__init__.py)
+# Example: git tag v1.0.0 && git push origin v1.0.0
+#
+# Required repo secret: PYPI_API_TOKEN (PyPI token with upload scope)
+
+name: Publish inelnet-api to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build
+        run: python3 -m pip install build
+
+      - name: Build package
+        run: python3 -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}

@@ -9,13 +9,12 @@ from homeassistant.config_entries import ConfigEntry
 
 from custom_components.inelnet.button import InelnetButtonEntity
 from custom_components.inelnet.const import (
-    ACT_DOWN_SHORT,
-    ACT_PROGRAM,
-    ACT_UP_SHORT,
+    Action,
     CONF_CHANNELS,
     CONF_HOST,
     DOMAIN,
 )
+from inelnet_api import InelnetChannel
 
 
 @pytest.fixture
@@ -38,16 +37,15 @@ def button_config_entry() -> ConfigEntry:
 
 def test_button_entity_attributes(button_config_entry: ConfigEntry) -> None:
     """Test button entity has correct unique_id and device info."""
+    client = InelnetChannel("192.168.1.67", 2)
     entity = InelnetButtonEntity(
         entry=button_config_entry,
-        host="192.168.1.67",
-        channel=2,
+        client=client,
         unique_id_suffix="short_up",
-        action_code=ACT_UP_SHORT,
-        entity_name="Short move up",
+        action=Action.UP_SHORT,
+        translation_key="short_up",
     )
     assert entity.unique_id == "test-button-entry-ch2-short_up"
-    assert entity.name == "Short move up"
     assert entity.device_info is not None
     identifiers = getattr(entity.device_info, "identifiers", entity.device_info.get("identifiers"))
     assert identifiers == {(DOMAIN, "test-button-entry-ch2")}
@@ -55,40 +53,44 @@ def test_button_entity_attributes(button_config_entry: ConfigEntry) -> None:
 
 
 async def test_button_press_sends_command(button_config_entry: ConfigEntry) -> None:
-    """Test async_press calls send_command with correct action code."""
+    """Test async_press calls client.send_command with correct action code."""
+    client = InelnetChannel("192.168.1.67", 1)
+    client.send_command = AsyncMock(return_value=True)
     entity = InelnetButtonEntity(
         entry=button_config_entry,
-        host="192.168.1.67",
-        channel=1,
+        client=client,
         unique_id_suffix="program",
-        action_code=ACT_PROGRAM,
-        entity_name="Programming mode",
+        action=Action.PROGRAM,
+        translation_key="program",
     )
     entity.hass = MagicMock()
+    mock_session = MagicMock()
     with patch(
-        "custom_components.inelnet.button.send_command",
-        new_callable=AsyncMock,
-    ) as mock_send:
+        "custom_components.inelnet.button.async_get_clientsession",
+        return_value=mock_session,
+    ):
         await entity.async_press()
-    mock_send.assert_called_once_with(entity.hass, "192.168.1.67", 1, ACT_PROGRAM)
+    client.send_command.assert_called_once_with(Action.PROGRAM, session=mock_session)
 
 
 async def test_button_short_down_sends_correct_code(
     button_config_entry: ConfigEntry,
 ) -> None:
     """Test Short move down button sends ACT_DOWN_SHORT."""
+    client = InelnetChannel("10.0.0.1", 3)
+    client.send_command = AsyncMock(return_value=True)
     entity = InelnetButtonEntity(
         entry=button_config_entry,
-        host="10.0.0.1",
-        channel=3,
+        client=client,
         unique_id_suffix="short_down",
-        action_code=ACT_DOWN_SHORT,
-        entity_name="Short move down",
+        action=Action.DOWN_SHORT,
+        translation_key="short_down",
     )
     entity.hass = MagicMock()
+    mock_session = MagicMock()
     with patch(
-        "custom_components.inelnet.button.send_command",
-        new_callable=AsyncMock,
-    ) as mock_send:
+        "custom_components.inelnet.button.async_get_clientsession",
+        return_value=mock_session,
+    ):
         await entity.async_press()
-    mock_send.assert_called_once_with(entity.hass, "10.0.0.1", 3, ACT_DOWN_SHORT)
+    client.send_command.assert_called_once_with(Action.DOWN_SHORT, session=mock_session)

@@ -11,16 +11,15 @@ from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import config_validation as cv, device_registry as dr
 from homeassistant.helpers.typing import ConfigType, TemplateVarsType
 
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
 from .const import (
-    ACT_DOWN_SHORT,
-    ACT_PROGRAM,
-    ACT_UP_SHORT,
+    Action,
     ACTION_DOWN_SHORT,
     ACTION_PROGRAM,
     ACTION_UP_SHORT,
     DOMAIN,
 )
-from .cover import send_command
 
 ACTION_TYPES = {
     ACTION_UP_SHORT,
@@ -35,30 +34,30 @@ ACTION_SCHEMA = cv.DEVICE_ACTION_BASE_SCHEMA.extend(
 )
 
 
-def _action_code(action_type: str) -> int:
-    """Map action type to REST send_act code."""
+def _action_code(action_type: str) -> Action:
+    """Map action type to Action enum."""
     return {
-        ACTION_UP_SHORT: ACT_UP_SHORT,
-        ACTION_DOWN_SHORT: ACT_DOWN_SHORT,
-        ACTION_PROGRAM: ACT_PROGRAM,
+        ACTION_UP_SHORT: Action.UP_SHORT,
+        ACTION_DOWN_SHORT: Action.DOWN_SHORT,
+        ACTION_PROGRAM: Action.PROGRAM,
     }[action_type]
 
 
-def _device_to_host_and_channel(
-    hass: HomeAssistant, device_id: str
-) -> tuple[str, int] | None:
-    """Resolve device_id to (host, channel). Returns None if not our device."""
+def _device_to_client_and_channel(hass: HomeAssistant, device_id: str):
+    """Resolve device_id to (client, channel). Returns (None, None) if not our device."""
+    from inelnet_api import InelnetChannel
+
     dev_reg = dr.async_get(hass)
     device = dev_reg.async_get(device_id)
     if not device or not device.config_entries:
-        return None
+        return None, None
     for identifier in device.identifiers:
         if identifier[0] != DOMAIN or "-ch" not in str(identifier[1]):
             continue
         try:
             _, ch_str = str(identifier[1]).rsplit("-ch", 1)
             channel = int(ch_str)
-        except ValueError, TypeError:
+        except (ValueError, TypeError):
             continue
         for entry_id in device.config_entries:
             entry = hass.config_entries.async_get_entry(entry_id)
@@ -67,17 +66,22 @@ def _device_to_host_and_channel(
             if not getattr(entry, "runtime_data", None):
                 continue
             data = entry.runtime_data
+            clients = getattr(data, "clients", None)
+            if clients and channel in clients:
+                return clients[channel], channel
+            # Fallback if runtime_data has no clients (e.g. old entry)
             host = getattr(data, "host", None)
             if host:
-                return (host, channel)
-    return None
+                return InelnetChannel(host, channel), channel
+    return None, None
 
 
 async def async_get_actions(
     hass: HomeAssistant, device_id: str
 ) -> list[dict[str, Any]]:
     """List device actions for INELNET devices."""
-    if _device_to_host_and_channel(hass, device_id) is None:
+    client, _ = _device_to_client_and_channel(hass, device_id)
+    if client is None:
         return []
 
     return [
@@ -101,12 +105,12 @@ async def async_call_action_from_config(
     context: Context | None,
 ) -> None:
     """Execute device action."""
-    resolved = _device_to_host_and_channel(hass, config[CONF_DEVICE_ID])
-    if not resolved:
+    client, _ = _device_to_client_and_channel(hass, config[CONF_DEVICE_ID])
+    if client is None:
         return
-    host, channel = resolved
     action_type = config.get("type")
     if action_type not in ACTION_TYPES:
         return
     code = _action_code(action_type)
-    await send_command(hass, host, channel, code)
+    session = async_get_clientsession(hass)
+    await client.send_command(code, session=session)

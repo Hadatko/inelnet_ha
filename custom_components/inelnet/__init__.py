@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import aiohttp
+from inelnet_api import InelnetChannel
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, Platform
@@ -17,10 +17,11 @@ from .const import CONF_CHANNELS
 
 @dataclass
 class InelnetRuntimeData:
-    """Runtime data for INELNET config entry."""
+    """Runtime data for INELNET config entry. One client per channel."""
 
     host: str
     channels: list[int]
+    clients: dict[int, InelnetChannel]  # channel -> client
 
 
 type InelnetConfigEntry = ConfigEntry[InelnetRuntimeData]
@@ -31,18 +32,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: InelnetConfigEntry) -> b
     host = entry.data[CONF_HOST]
     channels = entry.data[CONF_CHANNELS]
 
+    # One client per channel
+    clients = {ch: InelnetChannel(host, ch) for ch in channels}
+
     session = async_get_clientsession(hass)
-    url = f"http://{host}/msg.htm"
     try:
-        async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
-            if resp.status >= 400:
-                raise ConfigEntryNotReady(
-                    f"Controller at {host} returned {resp.status}"
-                ) from None
-    except (aiohttp.ClientError, OSError) as err:
+        # One ping is enough: all channels use the same controller URL (host).
+        if not await clients[channels[0]].ping(session=session):
+            raise ConfigEntryNotReady(
+                f"Controller at {host} did not respond or returned error"
+            ) from None
+    except Exception as err:
         raise ConfigEntryNotReady(f"Cannot connect to controller at {host}") from err
 
-    entry.runtime_data = InelnetRuntimeData(host=host, channels=channels)
+    entry.runtime_data = InelnetRuntimeData(host=host, channels=channels, clients=clients)
 
     await hass.config_entries.async_forward_entry_setups(
         entry, [Platform.COVER, Platform.BUTTON]
