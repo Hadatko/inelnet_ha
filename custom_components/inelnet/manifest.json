@@ -1,12 +1,13 @@
 {
   "domain": "inelnet",
   "name": "INELNET Blinds",
-  "version": "1.0.0",
-  "codeowners": ["@kuhadatko"],
+  "codeowners": ["@Hadatko"],
   "config_flow": true,
-  "documentation": "https://www.home-assistant.io/integrations/inelnet",
+  "dependencies": ["lovelace"],
+  "documentation": "https://github.com/Hadatko/inelnet_ha",
   "integration_type": "device",
   "iot_class": "local_polling",
-  "quality_scale": "bronze",
-  "requirements": ["inelnet-api>=1.0.1"]
+  "issue_tracker": "https://github.com/Hadatko/inelnet_ha/issues",
+  "requirements": ["inelnet-api>=1.0.1"],
+  "version": "1.1.0"
 }

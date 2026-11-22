@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant import config_entries
@@ -41,11 +41,10 @@ class TestParseChannels:
             parse_channels("1,a,3")
 
     def test_out_of_range_raises(self) -> None:
-        """Channel < 1 or > 16 raises ValueError."""
+        """Channel below 1 raises ValueError. Higher numbers are allowed."""
         with pytest.raises(ValueError):
             parse_channels("0")
-        with pytest.raises(ValueError):
-            parse_channels("17")
+        assert parse_channels("17") == [17]
 
     def test_duplicate_raises(self) -> None:
         """Duplicate channel raises ValueError."""
@@ -75,6 +74,24 @@ class TestIsValidHost:
         """Invalid IPv4-like string can be rejected (implementation may allow)."""
         # Current impl allows any \d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}
         assert is_valid_host("256.1.1.1") is True  # regex allows it
+
+
+@pytest.fixture(autouse=True)
+def mock_controller_ping():
+    """Do not contact a real controller from the config flow or from setup."""
+    with (
+        patch(
+            "custom_components.inelnet.config_flow.InelnetChannel.ping",
+            new_callable=AsyncMock,
+            return_value=True,
+        ),
+        patch(
+            "custom_components.inelnet.InelnetChannel.ping",
+            new_callable=AsyncMock,
+            return_value=True,
+        ),
+    ):
+        yield
 
 
 @pytest.mark.usefixtures("enable_custom_integrations")
@@ -163,3 +180,28 @@ async def test_config_flow_duplicate_aborts(hass) -> None:
     )
     assert result2["type"] is FlowResultType.ABORT
     assert result2["reason"] == "already_configured"
+
+
+@pytest.mark.usefixtures("enable_custom_integrations")
+async def test_options_flow_updates_channels(hass) -> None:
+    """Configure replaces the channel list and keeps the same controller."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_USER},
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {CONF_HOST: "10.0.0.5", CONF_CHANNELS: "2"},
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    entry = result["result"]
+
+    options = await hass.config_entries.options.async_init(entry.entry_id)
+    assert options["type"] is FlowResultType.FORM
+    options = await hass.config_entries.options.async_configure(
+        options["flow_id"],
+        {CONF_CHANNELS: "2,5"},
+    )
+    assert options["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.data[CONF_CHANNELS] == [2, 5]
+    assert entry.title == "INELNET 10.0.0.5 (ch 2,5)"

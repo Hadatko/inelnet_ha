@@ -46,6 +46,8 @@ class InelnetCoverEntity(CoverEntity):
     )
     _attr_has_entity_name = True
     _attr_name = None
+    # The controller accepts commands and never reports position.
+    _attr_assumed_state = True
 
     def __init__(self, entry: ConfigEntry, client: InelnetChannel) -> None:
         """Initialize the cover."""

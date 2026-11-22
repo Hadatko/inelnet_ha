@@ -1,0 +1,65 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Tato řídicí jednotka je už přidaná."
+    },
+    "error": {
+      "cannot_connect": "Nepodařilo se připojit k řídicí jednotce. Zkontroluj adresu a síť.",
+      "invalid_channels": "Neplatné kanály. Zadej kladná celá čísla oddělená čárkou.",
+      "invalid_host": "Neplatná IP adresa nebo název hostitele."
+    },
+    "step": {
+      "user": {
+        "data": {
+          "channels": "Kanály",
+          "host": "IP adresa"
+        },
+        "data_description": {
+          "channels": "Čísla kanálů oddělená čárkou, například 1 nebo 1,2,3.",
+          "host": "Adresa řídicí jednotky, například 192.168.1.67."
+        },
+        "description": "Zadej adresu řídicí jednotky a všechna čísla kanálů oddělená čárkou. Z každého kanálu vznikne jedna roleta. V postranním panelu přibude nástěnka s otevřením, stopem a zavřením. Krátké pohyby a párování zůstanou vypnuté, dokud ta tlačítka nezapneš.",
+        "title": "Nastavení INELNET"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "channels": "Kanály"
+        },
+        "data_description": {
+          "channels": "Kladná celá čísla oddělená čárkou, například 1,2,3. Nástěnka se po uložení aktualizuje."
+        },
+        "description": "Přidej nebo odeber čísla kanálů této řídicí jednotky. Každé číslo je jedna roleta.",
+        "title": "Kanály INELNET"
+      }
+    }
+  },
+  "device": {
+    "channel": {
+      "name": "INELNET roleta kanál {channel}"
+    }
+  },
+  "device_automation": {
+    "action_type": {
+      "down_short": "Krátký pohyb dolů",
+      "program": "Programování (párování ovladače)",
+      "up_short": "Krátký pohyb nahoru"
+    }
+  },
+  "entity": {
+    "button": {
+      "program": {
+        "name": "Programování (párování ovladače)"
+      },
+      "short_down": {
+        "name": "Krátký pohyb dolů"
+      },
+      "short_up": {
+        "name": "Krátký pohyb nahoru"
+      }
+    }
+  }
+}

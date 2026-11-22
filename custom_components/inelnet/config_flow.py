@@ -12,6 +12,7 @@ from inelnet_api import InelnetChannel
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.const import CONF_HOST
+from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import CONF_CHANNELS, DOMAIN
@@ -73,15 +74,17 @@ class InelnetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 except ValueError:
                     errors["base"] = "invalid_channels"
                 else:
+                    if any(
+                        entry.data.get(CONF_HOST) == host
+                        for entry in self._async_current_entries()
+                    ):
+                        return self.async_abort(reason="already_configured")
                     # Test connection to controller before creating entry
                     session = async_get_clientsession(self.hass)
                     client = InelnetChannel(host, channels[0])
                     try:
                         if await client.ping(session=session):
-                            unique_id = (
-                                f"{host}-{','.join(str(c) for c in channels)}"
-                            )
-                            await self.async_set_unique_id(unique_id)
+                            await self.async_set_unique_id(host)
                             self._abort_if_unique_id_configured()
 
                             return self.async_create_entry(
@@ -97,7 +100,7 @@ class InelnetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         data_schema = vol.Schema(
             {
-                vol.Required(CONF_HOST, default="192.168.1.67"): str,
+                vol.Required(CONF_HOST): str,
                 vol.Required(CONF_CHANNELS, default="1"): str,
             }
         )
@@ -105,5 +108,57 @@ class InelnetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=data_schema,
+            errors=errors,
+        )
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> config_entries.OptionsFlow:
+        """Channel list can change without adding the controller again."""
+        return InelnetOptionsFlow()
+
+
+class InelnetOptionsFlow(config_entries.OptionsFlow):
+    """Edit the channel list of an existing controller."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Let the user add or remove channels."""
+        errors: dict[str, str] = {}
+        current = list(self.config_entry.data[CONF_CHANNELS])
+        if user_input is not None:
+            try:
+                channels = parse_channels(user_input.get(CONF_CHANNELS) or "")
+            except ValueError:
+                errors["base"] = "invalid_channels"
+            else:
+                if channels != current:
+                    host = self.config_entry.data[CONF_HOST]
+                    self.hass.config_entries.async_update_entry(
+                        self.config_entry,
+                        data={CONF_HOST: host, CONF_CHANNELS: channels},
+                        title=(
+                            f"INELNET {host} "
+                            f"(ch {','.join(str(c) for c in channels)})"
+                        ),
+                    )
+                    await self.hass.config_entries.async_reload(
+                        self.config_entry.entry_id
+                    )
+                return self.async_create_entry(title="", data={})
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_CHANNELS,
+                        default=",".join(str(channel) for channel in current),
+                    ): str,
+                }
+            ),
             errors=errors,
         )

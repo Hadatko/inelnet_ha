@@ -27,10 +27,25 @@ jobs:
       - name: Install build
         run: python3 -m pip install build
 
+      - name: Skip when the tag is not the library version
+        id: version
+        run: |
+          package=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          tag="${GITHUB_REF_NAME#v}"
+          echo "package=$package" >> "$GITHUB_OUTPUT"
+          if [ "$tag" = "$package" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "Tag v$tag is not library version $package, so this release is not published to PyPI."
+          fi
+
       - name: Build package
+        if: steps.version.outputs.publish == 'true'
         run: python3 -m build
 
       - name: Publish to PyPI
+        if: steps.version.outputs.publish == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}

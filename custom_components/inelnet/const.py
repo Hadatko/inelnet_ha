@@ -1,5 +1,6 @@
 """Constants for the INELNET Blinds integration."""
 
+from homeassistant.const import CONF_HOST
 from inelnet_api import Action
 
 DOMAIN = "inelnet"
@@ -20,6 +21,7 @@ __all__ = [
     "ACTION_UP_SHORT",
     "Action",
     "CONF_CHANNELS",
+    "CONF_HOST",
     "DEVICE_NAME_CHANNEL_TEMPLATE",
     "DOMAIN",
 ]

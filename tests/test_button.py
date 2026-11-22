@@ -54,7 +54,8 @@ def test_button_entity_attributes(button_config_entry: ConfigEntry) -> None:
 
 async def test_button_press_sends_command(button_config_entry: ConfigEntry) -> None:
     """Test async_press calls client.send_command with correct action code."""
-    client = InelnetChannel("192.168.1.67", 1)
+    client = MagicMock()
+    client.channel = 1
     client.send_command = AsyncMock(return_value=True)
     entity = InelnetButtonEntity(
         entry=button_config_entry,
@@ -77,7 +78,8 @@ async def test_button_short_down_sends_correct_code(
     button_config_entry: ConfigEntry,
 ) -> None:
     """Test Short move down button sends ACT_DOWN_SHORT."""
-    client = InelnetChannel("10.0.0.1", 3)
+    client = MagicMock()
+    client.channel = 3
     client.send_command = AsyncMock(return_value=True)
     entity = InelnetButtonEntity(
         entry=button_config_entry,

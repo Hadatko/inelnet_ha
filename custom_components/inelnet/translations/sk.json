@@ -1,0 +1,65 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Táto riadiaca jednotka je už pridaná."
+    },
+    "error": {
+      "cannot_connect": "Nepodarilo sa pripojiť k riadiacej jednotke. Skontroluj adresu a sieť.",
+      "invalid_channels": "Neplatné kanály. Zadaj kladné celé čísla oddelené čiarkou.",
+      "invalid_host": "Neplatná IP adresa alebo názov hostiteľa."
+    },
+    "step": {
+      "user": {
+        "data": {
+          "channels": "Kanály",
+          "host": "IP adresa"
+        },
+        "data_description": {
+          "channels": "Čísla kanálov oddelené čiarkou, napríklad 1 alebo 1,2,3.",
+          "host": "Adresa riadiacej jednotky, napríklad 192.168.1.67."
+        },
+        "description": "Zadaj adresu riadiacej jednotky a všetky čísla kanálov oddelené čiarkou. Z každého kanála vznikne jedna roleta. V bočnom paneli pribudne nástenka s otvorením, stopom a zatvorením. Krátke pohyby a párovanie ostanú vypnuté, kým tie tlačidlá nezapneš.",
+        "title": "Nastavenie INELNET"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "channels": "Kanály"
+        },
+        "data_description": {
+          "channels": "Kladné celé čísla oddelené čiarkou, napríklad 1,2,3. Nástenka sa po uložení aktualizuje."
+        },
+        "description": "Pridaj alebo odober čísla kanálov tejto riadiacej jednotky. Každé číslo je jedna roleta.",
+        "title": "Kanály INELNET"
+      }
+    }
+  },
+  "device": {
+    "channel": {
+      "name": "INELNET roleta kanál {channel}"
+    }
+  },
+  "device_automation": {
+    "action_type": {
+      "down_short": "Krátky pohyb dole",
+      "program": "Programovanie (párovanie ovládača)",
+      "up_short": "Krátky pohyb hore"
+    }
+  },
+  "entity": {
+    "button": {
+      "program": {
+        "name": "Programovanie (párovanie ovládača)"
+      },
+      "short_down": {
+        "name": "Krátky pohyb dole"
+      },
+      "short_up": {
+        "name": "Krátky pohyb hore"
+      }
+    }
+  }
+}

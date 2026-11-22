@@ -1,64 +1,8 @@
-# inelnet_ha
+# INELNET Blinds
 
-Home Assistant integration for controlling INELNET blinds via REST API. You define all channels in one setup step (IP + comma-separated channel list). Each channel becomes one device with four entities: one cover (open/close/stop) and three buttons (Short move up, Short move down, Programming mode).
+Home Assistant integration for an INELNET blinds controller on the local network. Each channel is one shutter. The controller accepts commands and does not report position, so every shutter shows open, stop and close.
 
-## Installation
-
-For full setup steps see **[Setup guide →](https://github.com/Hadatko/inelnet_ha#)**.
-
-1. Copy the `custom_components/inelnet` folder into your Home Assistant `<config>/custom_components/inelnet` (or clone the repo and symlink).
-2. Restart Home Assistant.
-3. **Settings → Devices & services → Add integration** → search for "INELNET Blinds".
-4. Enter the controller **IP address** (e.g. `192.168.1.67`) and **all channel numbers** comma-separated (e.g. `1` or `1,2,3`). Channels are positive integers. One device per channel is created.  
-   **Channel definition** (entered when adding the integration):
-
-   ![Channel definition when adding integration](img/channelDef.jpg)
-
-5. Optionally assign each channel to a room in Home Assistant (**Channel → Room**):
-
-   ![Assigning channels to rooms](img/channelRoom.png)
-
-6. Each device has **4 entities**: the cover (open/close/stop) plus three buttons (Short move up, Short move down, Programming mode).
-
-## Usage
-
-- **Cover** – open/close/stop via UI or `cover.open_cover`, `cover.close_cover`, `cover.stop_cover`.
-- **Buttons** – one entity per action: Short move up, Short move down, Programming mode (for pairing a remote). Use in dashboards or automations.
-- **Device Actions** – the same actions are also available when building automations/scenes as device actions.
-
-## Technical details
-
-The integration uses the [inelnet-api](https://pypi.org/project/inelnet-api/) Python package to talk to the controller. The API sends POST requests to `http://<host>/msg.htm` with body `send_ch=<channel>&send_act=<code>`. Codes: 144 stop, 160 up, 176 up_short, 192 down, 208 down_short, 224 program.
-
-### inelnet-api library (PyPI)
-
-The blinds API is published as a separate package **inelnet-api**. Source is in the `inelnet_api/` directory. One channel = one `InelnetChannel(host, channel)` instance.
-
-**Publishing to PyPI:**
-
-1. Copy `.env.pypi.example` to `.env.pypi` and set your PyPI token (keep username as `__token__`). `.env.pypi` is in `.gitignore` and will not be committed.
-2. Run (you need `build` and `twine` installed):
-
-```bash
-./scripts/upload_pypi.sh
-```
-
-The script loads credentials from `.env.pypi` and runs `python3 -m build` and `twine upload dist/*`. After code changes, update `version` in `pyproject.toml` and `inelnet_api/__init__.py`, then run `./scripts/upload_pypi.sh` again.
-
-**Automated publish (recommended):** Push a version tag (e.g. `v1.0.0`) to trigger [GitHub Actions](.github/workflows/publish-pypi.yml). Add repository secret `PYPI_API_TOKEN` with your PyPI token. PyPI versions should [match tagged releases](https://developers.home-assistant.io/docs/api_lib_index/).
-
-## Testing
-
-Tests follow the same style as Home Assistant core integrations (pytest, `pytest-homeassistant-custom-component`).
-
-```bash
-pip install -e . && pip install -r requirements_test.txt
-pytest tests/ tests_inelnet_api/ -v
-```
-
-Requires a compatible Home Assistant core environment (e.g. install `homeassistant` in the same venv or use the same Python as HA). The `pytest-homeassistant-custom-component` package provides the `hass` and `enable_custom_integrations` fixtures.
-
----
+The integration adds a sidebar dashboard named **INELNET**. Each shutter is its own card. Shutters that have a room are grouped under that room. There is no button that moves every shutter at once.
 
 If anybody is interested in supporting my "sleepless" nights (working mostly between 23:00-3:00) on different projects press:
 
@@ -67,3 +11,69 @@ If anybody is interested in supporting my "sleepless" nights (working mostly bet
 Thank you ;)
 
 Ideas are welcome. But PRs are welcome more ;)
+
+## What you get
+
+- One cover per channel: open, stop, close. Usable from the dashboard, from automations, or with `cover.open_cover`, `cover.close_cover` and `cover.stop_cover`.
+- A generated dashboard that updates when you add a channel, rename a shutter, or assign a room. Edits you make on that dashboard are replaced the next time the list of shutters or rooms changes.
+- Three extra buttons per channel, disabled until you enable them: short move up, short move down, and programming mode for pairing a remote. The same three actions are available as device actions.
+
+## Installation
+
+Home Assistant 2025.1 or newer.
+
+### HACS
+
+1. In HACS, open **Integrations**.
+2. If INELNET Blinds is not in the list yet, open the three-dot menu, choose **Custom repositories**, and add `https://github.com/Hadatko/inelnet_ha` with category **Integration**.
+3. Download **INELNET Blinds** and restart Home Assistant.
+
+### Manual
+
+Copy `custom_components/inelnet` into the Home Assistant `config/custom_components/inelnet` directory and restart.
+
+## Setup
+
+1. **Settings → Devices & services → Add integration** and search for **INELNET Blinds**.
+2. Enter the controller address and every channel number, separated by commas (`1` or `1,2,3`). A channel is any positive integer. One device is created per channel.
+
+   ![Channel definition when adding the integration](img/channelDef.jpg)
+
+3. Open the **INELNET** dashboard in the sidebar. Assign a device to a room if you want the card under that room. The dashboard picks the room up on its own.
+
+   ![Assigning a channel to a room](img/channelRoom.png)
+
+4. To add or remove a channel later, open the integration, then **Configure**. You do not add the controller a second time.
+
+The controller is contacted once during setup. After that Home Assistant only sends a command when you press a button. Position is never read, so the state stays unknown and both directions stay available.
+
+## For developers
+
+Commands are HTTP POST requests to `http://<host>/msg.htm` with body `send_ch=<channel>&send_act=<code>`.
+
+| Action | Code |
+| --- | --- |
+| Stop | 144 |
+| Up | 160 |
+| Short up | 176 |
+| Down | 192 |
+| Short down | 208 |
+| Program | 224 |
+
+The client is the [inelnet-api](https://pypi.org/project/inelnet-api/) package. Source is in `inelnet_api/`. One channel is one `InelnetChannel(host, channel)`.
+
+### Publish the library
+
+1. Copy `.env.pypi.example` to `.env.pypi` and set the PyPI token. The username stays `__token__`. `.env.pypi` is gitignored.
+2. Run `./scripts/upload_pypi.sh` (`build` and `twine` are required).
+
+Before a new upload, bump `version` in `pyproject.toml` and `inelnet_api/__init__.py`. A tag such as `v1.0.1` also publishes through [GitHub Actions](.github/workflows/publish-pypi.yml) when the `PYPI_API_TOKEN` secret is set.
+
+### Tests
+
+```bash
+pip install -e . && pip install -r requirements_test.txt
+pytest tests/ tests_inelnet_api/ -v
+```
+
+The integration tests use `pytest-homeassistant-custom-component`.

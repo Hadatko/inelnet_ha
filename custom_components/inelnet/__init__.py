@@ -13,6 +13,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import CONF_CHANNELS
+from .dashboard import async_ensure_dashboard_listeners, async_setup_dashboard
 
 
 @dataclass
@@ -42,6 +43,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: InelnetConfigEntry) -> b
             raise ConfigEntryNotReady(
                 f"Controller at {host} did not respond or returned error"
             ) from None
+    except ConfigEntryNotReady:
+        raise
     except Exception as err:
         raise ConfigEntryNotReady(f"Cannot connect to controller at {host}") from err
 
@@ -50,12 +53,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: InelnetConfigEntry) -> b
     await hass.config_entries.async_forward_entry_setups(
         entry, [Platform.COVER, Platform.BUTTON]
     )
+    async_ensure_dashboard_listeners(hass)
+    await async_setup_dashboard(hass)
 
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: InelnetConfigEntry) -> bool:
     """Unload a config entry."""
-    return await hass.config_entries.async_unload_platforms(
+    unloaded = await hass.config_entries.async_unload_platforms(
         entry, [Platform.COVER, Platform.BUTTON]
     )
+    if unloaded:
+        await async_setup_dashboard(hass)
+    return unloaded

@@ -46,13 +46,15 @@ def test_cover_entity_attributes(cover_config_entry: ConfigEntry) -> None:
     name = getattr(entity.device_info, "name", entity.device_info.get("name"))
     assert name == "INELNET Blinds channel 1"
     assert entity.is_closed is None
+    assert entity.assumed_state is True
 
 
 async def test_cover_open_sends_up_command(
     cover_config_entry: ConfigEntry,
 ) -> None:
     """Test async_open_cover calls client.up with session."""
-    client = InelnetChannel("192.168.1.67", 1)
+    client = MagicMock()
+    client.channel = 1
     client.up = AsyncMock(return_value=True)
     entity = InelnetCoverEntity(cover_config_entry, client)
     entity.hass = MagicMock()
@@ -69,7 +71,8 @@ async def test_cover_close_sends_down_command(
     cover_config_entry: ConfigEntry,
 ) -> None:
     """Test async_close_cover calls client.down with session."""
-    client = InelnetChannel("192.168.1.67", 1)
+    client = MagicMock()
+    client.channel = 1
     client.down = AsyncMock(return_value=True)
     entity = InelnetCoverEntity(cover_config_entry, client)
     entity.hass = MagicMock()
@@ -86,7 +89,8 @@ async def test_cover_stop_sends_stop_command(
     cover_config_entry: ConfigEntry,
 ) -> None:
     """Test async_stop_cover calls client.stop with session."""
-    client = InelnetChannel("192.168.1.67", 1)
+    client = MagicMock()
+    client.channel = 1
     client.stop = AsyncMock(return_value=True)
     entity = InelnetCoverEntity(cover_config_entry, client)
     entity.hass = MagicMock()
