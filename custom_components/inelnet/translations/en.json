@@ -5,20 +5,26 @@
     },
     "error": {
       "cannot_connect": "Cannot connect to the controller. Check the address and the network.",
+      "invalid_auth": "Login was rejected. Check the username and password from the controller web page.",
       "invalid_channels": "Invalid channels. Enter positive integers separated by commas.",
-      "invalid_host": "Invalid IP address or hostname."
+      "invalid_host": "Invalid IP address or hostname.",
+      "no_devices": "The controller has no devices yet."
     },
     "step": {
       "user": {
         "data": {
           "channels": "Channels",
-          "host": "IP address"
+          "host": "IP address",
+          "password": "Password",
+          "username": "Username"
         },
         "data_description": {
-          "channels": "Channel numbers separated by commas, for example 1 or 1,2,3.",
-          "host": "Controller address, for example 192.168.1.67."
+          "channels": "Used only when the username is empty. Channel numbers separated by commas, for example 1 or 1,2,3.",
+          "host": "Controller address, for example 192.168.1.67.",
+          "password": "Password for the controller web page.",
+          "username": "Web login from the controller. Leave empty to type channel numbers yourself."
         },
-        "description": "Enter the controller address and every channel number, separated by commas. Each channel becomes one shutter. A sidebar dashboard with open, stop and close is created for them. Short moves and programming stay disabled until you enable those buttons.",
+        "description": "Enter the controller address. With the web login, names, rooms and groups are read from the controller. Without it, enter every channel number separated by commas. A sidebar dashboard is created for them.",
         "title": "Configure INELNET"
       }
     }
@@ -27,13 +33,17 @@
     "step": {
       "init": {
         "data": {
-          "channels": "Channels"
+          "channels": "Channels",
+          "password": "Password",
+          "username": "Username"
         },
         "data_description": {
-          "channels": "Comma-separated positive integers, for example 1,2,3. The dashboard updates after you save."
+          "channels": "Used only when the username is empty. The dashboard updates after you save.",
+          "password": "Leave empty to keep the saved password.",
+          "username": "Web login from the controller. Clear it to go back to a manual channel list."
         },
-        "description": "Add or remove channel numbers for this controller. Each number is one shutter.",
-        "title": "INELNET channels"
+        "description": "Sign in to read names, rooms and groups from the controller. Without a login, edit the channel numbers.",
+        "title": "INELNET controller"
       }
     }
   },
@@ -59,6 +69,11 @@
       },
       "short_up": {
         "name": "Short move up"
+      }
+    },
+    "sensor": {
+      "schedules": {
+        "name": "Schedules"
       }
     }
   }

@@ -52,12 +52,20 @@ def _device_to_client_and_channel(hass: HomeAssistant, device_id: str):
     if not device or not device.config_entries:
         return None, None
     for identifier in device.identifiers:
-        if identifier[0] != DOMAIN or "-ch" not in str(identifier[1]):
+        if identifier[0] != DOMAIN or (
+            "-ch" not in str(identifier[1]) and "-gr" not in str(identifier[1])
+        ):
             continue
-        try:
-            _, ch_str = str(identifier[1]).rsplit("-ch", 1)
-            channel = int(ch_str)
-        except (ValueError, TypeError):
+        token = str(identifier[1])
+        channel = None
+        for marker in ("-gr", "-ch"):
+            if marker in token:
+                try:
+                    channel = int(token.rsplit(marker, 1)[1])
+                except (ValueError, TypeError):
+                    channel = None
+                break
+        if channel is None:
             continue
         for entry_id in device.config_entries:
             entry = hass.config_entries.async_get_entry(entry_id)

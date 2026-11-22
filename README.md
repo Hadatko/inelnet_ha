@@ -2,7 +2,7 @@
 
 Home Assistant integration for an INELNET blinds controller on the local network. Each channel is one shutter. The controller accepts commands and does not report position, so every shutter shows open, stop and close.
 
-The integration adds a sidebar dashboard named **INELNET**. Each shutter is its own card. Shutters that have a room are grouped under that room. There is no button that moves every shutter at once.
+The integration adds a sidebar dashboard named **INELNET**. Names, rooms and groups are whatever that controller has stored. Nothing is fixed to one home. With the web login, each room is its own section and that controller's groups are cards at the top. Pairing a remote is on a separate view, so it is not next to the daily open and close buttons.
 
 If anybody is interested in supporting my "sleepless" nights (working mostly between 23:00-3:00) on different projects press:
 
@@ -14,9 +14,11 @@ Ideas are welcome. But PRs are welcome more ;)
 
 ## What you get
 
-- One cover per channel: open, stop, close. Usable from the dashboard, from automations, or with `cover.open_cover`, `cover.close_cover` and `cover.stop_cover`.
-- A generated dashboard that updates when you add a channel, rename a shutter, or assign a room. Edits you make on that dashboard are replaced the next time the list of shutters or rooms changes.
-- Three extra buttons per channel, disabled until you enable them: short move up, short move down, and programming mode for pairing a remote. The same three actions are available as device actions.
+- One cover per channel: open, stop, close. With the controller web login, the name and room come from the controller. Lights and sockets become switches. Venetian blinds also get tilt.
+- One cover per group stored on the controller. The group number is the channel the controller already uses for that group.
+- A generated dashboard with a section per room, the groups above them, and a separate pairing view. Edits you make on that dashboard are replaced when the list of shutters, rooms or groups changes.
+- Pairing is enabled. Short move up and short move down stay disabled until you enable those buttons. The same three actions are available as device actions.
+- Schedules are read from the controller when any exist. The controller still runs them. This integration does not create or delete schedules.
 
 ## Installation
 
@@ -35,17 +37,17 @@ Copy `custom_components/inelnet` into the Home Assistant `config/custom_componen
 ## Setup
 
 1. **Settings → Devices & services → Add integration** and search for **INELNET Blinds**.
-2. Enter the controller address and every channel number, separated by commas (`1` or `1,2,3`). A channel is any positive integer. One device is created per channel.
+2. Enter the controller address. Add the web username and password from the controller page to read names, rooms and groups. Leave the login empty and enter channel numbers separated by commas (`1` or `1,2,3`) if you do not want to store that password. A channel is any positive integer.
 
    ![Channel definition when adding the integration](img/channelDef.jpg)
 
-3. Open the **INELNET** dashboard in the sidebar. Assign a device to a room if you want the card under that room. The dashboard picks the room up on its own.
+3. Open the **INELNET** dashboard in the sidebar. With a login, rooms are created from the controller and the devices are assigned to them. Without a login, assign a device to a room yourself. The dashboard picks the room up on its own. Pairing is the second view on that dashboard.
 
    ![Assigning a channel to a room](img/channelRoom.png)
 
-4. To add or remove a channel later, open the integration, then **Configure**. You do not add the controller a second time.
+4. To change the login or the channel list later, open the integration, then **Configure**. You do not add the controller a second time. Leave the password empty to keep the one already saved.
 
-The controller is contacted once during setup. After that Home Assistant only sends a command when you press a button. Position is never read, so the state stays unknown and both directions stay available.
+The controller is contacted during setup. With a web login, names, rooms, groups and schedules are read then. After that Home Assistant only sends a command when you press a button. Position is never read, so the state stays unknown and both directions stay available. Reload the integration after you rename something on the controller.
 
 ## For developers
 

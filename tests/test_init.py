@@ -84,7 +84,7 @@ def test_dashboard_has_one_tile_per_shutter() -> None:
 
 
 def test_dashboard_groups_rooms() -> None:
-    """Assigned rooms become headings. A shutter without a room stays separate."""
+    """Each room is its own section. A shutter without a room stays separate."""
     config = build_dashboard(
         [
             {"entity_id": "cover.a", "name": "A", "area": "Kuchyňa"},
@@ -93,11 +93,57 @@ def test_dashboard_groups_rooms() -> None:
         ],
         "en",
     )
-    cards = config["views"][0]["sections"][0]["cards"]
-    headings = [card["heading"] for card in cards if card["type"] == "heading"]
-    entities = [card["entity"] for card in cards if card["type"] == "tile"]
-    assert headings == ["Kuchyňa", "No room"]
-    assert entities == ["cover.a", "cover.c", "cover.b"]
+    sections = config["views"][0]["sections"]
+    assert sections[0]["cards"][0]["heading"] == "Kuchyňa"
+    assert [card["entity"] for card in sections[0]["cards"] if card["type"] == "tile"] == [
+        "cover.a",
+        "cover.c",
+    ]
+    assert sections[1]["cards"][0]["heading"] == "No room"
+    assert sections[1]["cards"][1]["entity"] == "cover.b"
+
+
+def test_dashboard_puts_groups_above_rooms_and_pairing_on_its_own_view() -> None:
+    """Controller groups are the first section. Pairing is not on the daily view."""
+    config = build_dashboard(
+        [
+            {
+                "entity_id": "cover.group",
+                "name": "Celý byt",
+                "area": None,
+                "kind": "group",
+                "domain": "cover",
+            },
+            {
+                "entity_id": "cover.room",
+                "name": "Okno",
+                "area": "Living room",
+                "kind": "shutter",
+                "domain": "cover",
+            },
+            {
+                "entity_id": "button.pair",
+                "name": "Okno",
+                "area": "Living room",
+                "kind": "pair",
+                "domain": "button",
+            },
+        ],
+        "sk",
+    )
+    home = config["views"][0]
+    assert home["sections"][0]["cards"][0]["heading"] == "Skupiny"
+    assert home["sections"][0]["cards"][1]["entity"] == "cover.group"
+    assert home["sections"][1]["cards"][0]["heading"] == "Living room"
+    pairing = config["views"][1]
+    assert pairing["title"] == "Párovanie"
+    buttons = [
+        card
+        for section in pairing["sections"]
+        for card in section["cards"]
+        if card["type"] == "button"
+    ]
+    assert buttons[0]["entity"] == "button.pair"
 
 
 def test_dashboard_empty_state() -> None:

@@ -8,8 +8,12 @@ import pytest
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResultType
 
+from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+
+from custom_components.inelnet.catalogue import parse_catalogue
 from custom_components.inelnet.config_flow import is_valid_host, parse_channels
 from custom_components.inelnet.const import CONF_CHANNELS, CONF_HOST, DOMAIN
+from tests.test_catalogue import DEVICES, GROUPS, PLACES
 
 
 class TestParseChannels:
@@ -205,3 +209,31 @@ async def test_options_flow_updates_channels(hass) -> None:
     assert options["type"] is FlowResultType.CREATE_ENTRY
     assert entry.data[CONF_CHANNELS] == [2, 5]
     assert entry.title == "INELNET 10.0.0.5 (ch 2,5)"
+
+
+@pytest.mark.usefixtures("enable_custom_integrations")
+async def test_config_flow_discovers_channels_from_login(hass) -> None:
+    """A web login replaces the typed channel list with the controller catalogue."""
+    catalogue = parse_catalogue(PLACES, DEVICES, GROUPS, {"program": []})
+    with patch(
+        "custom_components.inelnet.config_flow.async_fetch_catalogue",
+        new_callable=AsyncMock,
+        return_value=catalogue,
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": config_entries.SOURCE_USER},
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_HOST: "192.168.1.67",
+                CONF_USERNAME: "admin",
+                CONF_PASSWORD: "secret",
+                CONF_CHANNELS: "",
+            },
+        )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["title"] == "INELNET 192.168.1.67"
+    assert result["data"][CONF_CHANNELS] == [1, 3, 9]
+    assert result["data"][CONF_USERNAME] == "admin"

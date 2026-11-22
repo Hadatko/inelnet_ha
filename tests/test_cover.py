@@ -49,6 +49,31 @@ def test_cover_entity_attributes(cover_config_entry: ConfigEntry) -> None:
     assert entity.assumed_state is True
 
 
+def test_group_cover_uses_the_group_name_and_number(cover_config_entry: ConfigEntry) -> None:
+    """A controller group is its own device and commands the group number."""
+    client = InelnetChannel("192.168.1.67", 100)
+    entity = InelnetCoverEntity(
+        cover_config_entry,
+        client,
+        device_name="Whole home",
+        unique_suffix="gr100",
+        model="Group",
+    )
+    assert entity.unique_id == "test-cover-entry-gr100"
+    name = getattr(entity.device_info, "name", entity.device_info.get("name"))
+    assert name == "Whole home"
+
+
+def test_venetian_cover_supports_tilt(cover_config_entry: ConfigEntry) -> None:
+    """Venetian blinds expose tilt, which the controller calls a short move."""
+    from homeassistant.components.cover import CoverEntityFeature
+
+    client = InelnetChannel("192.168.1.67", 3)
+    entity = InelnetCoverEntity(cover_config_entry, client, tilt=True)
+    assert CoverEntityFeature.OPEN_TILT in entity.supported_features
+    assert CoverEntityFeature.CLOSE_TILT in entity.supported_features
+
+
 async def test_cover_open_sends_up_command(
     cover_config_entry: ConfigEntry,
 ) -> None:

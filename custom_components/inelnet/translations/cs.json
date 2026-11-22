@@ -5,20 +5,26 @@
     },
     "error": {
       "cannot_connect": "Nepodařilo se připojit k řídicí jednotce. Zkontroluj adresu a síť.",
+      "invalid_auth": "Přihlášení neprošlo. Zkontroluj jméno a heslo z webové stránky jednotky.",
       "invalid_channels": "Neplatné kanály. Zadej kladná celá čísla oddělená čárkou.",
-      "invalid_host": "Neplatná IP adresa nebo název hostitele."
+      "invalid_host": "Neplatná IP adresa nebo název hostitele.",
+      "no_devices": "Na jednotce zatím nejsou žádná zařízení."
     },
     "step": {
       "user": {
         "data": {
           "channels": "Kanály",
-          "host": "IP adresa"
+          "host": "IP adresa",
+          "password": "Heslo",
+          "username": "Přihlašovací jméno"
         },
         "data_description": {
-          "channels": "Čísla kanálů oddělená čárkou, například 1 nebo 1,2,3.",
-          "host": "Adresa řídicí jednotky, například 192.168.1.67."
+          "channels": "Použije se jen když je přihlašovací jméno prázdné. Čísla kanálů oddělená čárkou, například 1 nebo 1,2,3.",
+          "host": "Adresa řídicí jednotky, například 192.168.1.67.",
+          "password": "Heslo z webové stránky jednotky.",
+          "username": "Přihlášení z webu jednotky. Nech prázdné, pokud chceš čísla kanálů zadat ručně."
         },
-        "description": "Zadej adresu řídicí jednotky a všechna čísla kanálů oddělená čárkou. Z každého kanálu vznikne jedna roleta. V postranním panelu přibude nástěnka s otevřením, stopem a zavřením. Krátké pohyby a párování zůstanou vypnuté, dokud ta tlačítka nezapneš.",
+        "description": "Zadej adresu jednotky. S přihlášením z webu se natáhnou názvy, místnosti a skupiny. Bez něj zadej čísla kanálů oddělená čárkou. V postranním panelu přibude nástěnka.",
         "title": "Nastavení INELNET"
       }
     }
@@ -27,13 +33,17 @@
     "step": {
       "init": {
         "data": {
-          "channels": "Kanály"
+          "channels": "Kanály",
+          "password": "Heslo",
+          "username": "Přihlašovací jméno"
         },
         "data_description": {
-          "channels": "Kladná celá čísla oddělená čárkou, například 1,2,3. Nástěnka se po uložení aktualizuje."
+          "channels": "Použije se jen když je přihlašovací jméno prázdné. Nástěnka se po uložení aktualizuje.",
+          "password": "Nech prázdné, pokud chceš ponechat uložené heslo.",
+          "username": "Přihlášení z webu jednotky. Smaž ho, pokud se chceš vrátit k ručnímu seznamu kanálů."
         },
-        "description": "Přidej nebo odeber čísla kanálů této řídicí jednotky. Každé číslo je jedna roleta.",
-        "title": "Kanály INELNET"
+        "description": "Přihlas se a názvy, místnosti a skupiny se přečtou z jednotky. Bez přihlášení uprav čísla kanálů.",
+        "title": "Jednotka INELNET"
       }
     }
   },
@@ -59,6 +69,11 @@
       },
       "short_up": {
         "name": "Krátký pohyb nahoru"
+      }
+    },
+    "sensor": {
+      "schedules": {
+        "name": "Časové programy"
       }
     }
   }
