@@ -1,6 +1,7 @@
 {
   "domain": "inelnet",
   "name": "INELNET Blinds",
+  "categories": ["cover"],
   "codeowners": ["@Hadatko"],
   "config_flow": true,
   "dependencies": ["lovelace"],
