@@ -9,6 +9,7 @@ from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResultType
 
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.inelnet.catalogue import parse_catalogue
 from custom_components.inelnet.config_flow import is_valid_host, parse_channels
@@ -237,3 +238,63 @@ async def test_config_flow_discovers_channels_from_login(hass) -> None:
     assert result["title"] == "INELNET 192.168.1.67"
     assert result["data"][CONF_CHANNELS] == [1, 3, 9]
     assert result["data"][CONF_USERNAME] == "admin"
+
+
+@pytest.mark.usefixtures("enable_custom_integrations")
+async def test_reauth_updates_rejected_login(hass) -> None:
+    """A rejected web login can be replaced without removing the controller."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="192.168.1.67",
+        title="INELNET 192.168.1.67 (ch 1)",
+        data={
+            CONF_HOST: "192.168.1.67",
+            CONF_CHANNELS: [1],
+            CONF_USERNAME: "admin",
+            CONF_PASSWORD: "old",
+        },
+    )
+    entry.add_to_hass(hass)
+    catalogue = parse_catalogue(PLACES, DEVICES, GROUPS, {"program": []})
+
+    with (
+        patch(
+            "custom_components.inelnet.config_flow.async_fetch_catalogue",
+            new_callable=AsyncMock,
+            return_value=catalogue,
+        ),
+        patch(
+            "custom_components.inelnet.async_fetch_catalogue",
+            new_callable=AsyncMock,
+            return_value=catalogue,
+        ),
+    ):
+        reauth = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={
+                "source": config_entries.SOURCE_REAUTH,
+                "entry_id": entry.entry_id,
+                "unique_id": entry.unique_id,
+            },
+            data=entry.data,
+        )
+        assert reauth["type"] is FlowResultType.FORM
+        assert reauth["step_id"] == "reauth_confirm"
+        reauth = await hass.config_entries.flow.async_configure(
+            reauth["flow_id"],
+            {CONF_USERNAME: "admin", CONF_PASSWORD: ""},
+        )
+        assert reauth["type"] is FlowResultType.FORM
+        assert reauth["errors"]["base"] == "invalid_auth"
+        reauth = await hass.config_entries.flow.async_configure(
+            reauth["flow_id"],
+            {CONF_USERNAME: "owner", CONF_PASSWORD: "new-secret"},
+        )
+        await hass.async_block_till_done()
+
+    assert reauth["type"] is FlowResultType.ABORT
+    assert reauth["reason"] == "reauth_successful"
+    assert entry.data[CONF_USERNAME] == "owner"
+    assert entry.data[CONF_PASSWORD] == "new-secret"
+    assert entry.data[CONF_CHANNELS] == [1, 3, 9]
+    assert entry.title == "INELNET 192.168.1.67"

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 import re
 from typing import Any
 
@@ -171,6 +172,50 @@ class InelnetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     **_login_fields(
                         (user_input or {}).get(CONF_USERNAME) or "",
                         (user_input or {}).get(CONF_CHANNELS) or "1",
+                    ),
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_reauth(
+        self, _entry_data: Mapping[str, Any]
+    ) -> ConfigFlowResult:
+        """Start a new login after the saved one was rejected."""
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask for a username and password, then store them on the entry."""
+        errors: dict[str, str] = {}
+        entry = self._get_reauth_entry()
+        host = entry.data[CONF_HOST]
+        username = entry.data.get(CONF_USERNAME) or ""
+        if user_input is not None:
+            username = (user_input.get(CONF_USERNAME) or "").strip()
+            password = user_input.get(CONF_PASSWORD) or ""
+            if not username or not password:
+                errors["base"] = "invalid_auth"
+            else:
+                data, error = await async_resolve_setup(self.hass, host, user_input)
+                if error is not None:
+                    errors["base"] = error
+                else:
+                    assert data is not None
+                    return self.async_update_reload_and_abort(
+                        entry,
+                        data=data,
+                        title=_title(host, data[CONF_CHANNELS], True),
+                    )
+
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_USERNAME, default=username): str,
+                    vol.Required(CONF_PASSWORD): TextSelector(
+                        TextSelectorConfig(type=TextSelectorType.PASSWORD)
                     ),
                 }
             ),

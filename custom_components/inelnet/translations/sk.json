@@ -1,7 +1,8 @@
 {
   "config": {
     "abort": {
-      "already_configured": "Táto riadiaca jednotka je už pridaná."
+      "already_configured": "Táto riadiaca jednotka je už pridaná.",
+      "reauth_successful": "Prihlásenie bolo aktualizované."
     },
     "error": {
       "cannot_connect": "Nepodarilo sa pripojiť k riadiacej jednotke. Skontroluj adresu a sieť.",
@@ -26,6 +27,18 @@
         },
         "description": "Zadaj adresu jednotky. S prihlásením z webu sa natiahnu názvy, miestnosti a skupiny. Bez neho zadaj čísla kanálov oddelené čiarkou. V bočnom paneli pribudne nástenka.",
         "title": "Nastavenie INELNET"
+      },
+      "reauth_confirm": {
+        "data": {
+          "password": "Heslo",
+          "username": "Prihlasovacie meno"
+        },
+        "data_description": {
+          "password": "Heslo z webovej stránky jednotky.",
+          "username": "Prihlásenie z webu jednotky."
+        },
+        "description": "Uložené prihlásenie bolo odmietnuté. Zadaj prihlasovacie meno a heslo z webovej stránky jednotky.",
+        "title": "Znova overiť INELNET"
       }
     }
   },

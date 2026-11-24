@@ -1,7 +1,8 @@
 {
   "config": {
     "abort": {
-      "already_configured": "This controller is already configured."
+      "already_configured": "This controller is already configured.",
+      "reauth_successful": "The login was updated."
     },
     "error": {
       "cannot_connect": "Cannot connect to the controller. Check the address and the network.",
@@ -26,6 +27,18 @@
         },
         "description": "Enter the controller address. With the web login, names, rooms and groups are read from the controller. Without it, enter every channel number separated by commas. A sidebar dashboard is created for them.",
         "title": "Configure INELNET"
+      },
+      "reauth_confirm": {
+        "data": {
+          "password": "Password",
+          "username": "Username"
+        },
+        "data_description": {
+          "password": "Password for the controller web page.",
+          "username": "Web login from the controller."
+        },
+        "description": "The saved login was rejected. Enter the username and password from the controller web page.",
+        "title": "Reauthenticate INELNET"
       }
     }
   },
