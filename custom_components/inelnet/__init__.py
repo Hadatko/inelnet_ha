@@ -15,12 +15,14 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entity_registry import RegistryEntryDisabler
+from homeassistant.helpers.storage import Store
 
 from .catalogue import Catalogue, CatalogueAuthError, CatalogueError, async_fetch_catalogue
 from .const import CONF_CHANNELS, DOMAIN
-from .dashboard import async_ensure_dashboard_listeners, async_setup_dashboard
 
 PLATFORMS = [Platform.COVER, Platform.BUTTON, Platform.SWITCH, Platform.SENSOR]
+_AREA_STORE_VERSION = 1
+_AREA_STORE_KEY = f"{DOMAIN}_area_sync"
 
 
 @dataclass
@@ -37,7 +39,7 @@ type InelnetConfigEntry = ConfigEntry[InelnetRuntimeData]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: InelnetConfigEntry) -> bool:
-    """Set up covers, groups, lights and the dashboard for one controller."""
+    """Set up covers, groups and lights for one controller."""
     host = entry.data[CONF_HOST]
     stored_channels = list(entry.data[CONF_CHANNELS])
     session = async_get_clientsession(hass)
@@ -83,21 +85,37 @@ async def async_setup_entry(hass: HomeAssistant, entry: InelnetConfigEntry) -> b
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     await _async_sync_areas(hass, entry)
     _async_enable_pairing(hass, entry)
-    async_ensure_dashboard_listeners(hass)
-    await async_setup_dashboard(hass)
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: InelnetConfigEntry) -> bool:
     """Unload a config entry."""
-    unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unloaded:
-        await async_setup_dashboard(hass)
-    return unloaded
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+def area_sync_action(
+    previous: int | None,
+    place: int,
+    current_area_id: str | None,
+    target_area_id: str,
+) -> tuple[str | None, bool]:
+    """Return the area to assign, and whether this controller room should be stored.
+
+    The first time a channel is seen, only an empty area is filled. After that
+    the device moves only when the controller's room changed. A room chosen in
+    Home Assistant stays while the controller room stays the same.
+    """
+    if previous is None:
+        assigned = target_area_id if current_area_id is None else None
+        return assigned, True
+    if previous == place:
+        return None, False
+    assigned = target_area_id if current_area_id != target_area_id else None
+    return assigned, True
 
 
 async def _async_sync_areas(hass: HomeAssistant, entry: InelnetConfigEntry) -> None:
-    """Create rooms from the controller and assign each device to its room."""
+    """Create rooms from the controller and assign a device only when allowed."""
     catalogue = entry.runtime_data.catalogue
     if catalogue is None:
         return
@@ -109,16 +127,40 @@ async def _async_sync_areas(hass: HomeAssistant, entry: InelnetConfigEntry) -> N
         if area is None:
             area = areas.async_create(place.name)
         area_ids[place.number] = area.id
+
+    store = Store(hass, _AREA_STORE_VERSION, _AREA_STORE_KEY)
+    stored = await store.async_load() or {}
+    remembered = {
+        str(channel): int(place)
+        for channel, place in (stored.get(entry.entry_id) or {}).items()
+    }
+    changed = False
     for device in catalogue.devices:
         if device.place is None:
+            continue
+        target_area_id = area_ids.get(device.place)
+        if target_area_id is None:
             continue
         ha_device = devices.async_get_device(
             identifiers={(DOMAIN, f"{entry.entry_id}-ch{device.channel}")}
         )
-        area_id = area_ids.get(device.place)
-        if ha_device is None or area_id is None or ha_device.area_id == area_id:
+        if ha_device is None:
             continue
-        devices.async_update_device(ha_device.id, area_id=area_id)
+        key = str(device.channel)
+        assigned, remember = area_sync_action(
+            remembered.get(key),
+            device.place,
+            ha_device.area_id,
+            target_area_id,
+        )
+        if assigned is not None:
+            devices.async_update_device(ha_device.id, area_id=assigned)
+        if remember:
+            remembered[key] = device.place
+            changed = True
+    if changed:
+        stored[entry.entry_id] = remembered
+        await store.async_save(stored)
 
 
 def _async_enable_pairing(hass: HomeAssistant, entry: InelnetConfigEntry) -> None:

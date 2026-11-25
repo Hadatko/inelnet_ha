@@ -8,9 +8,8 @@ import pytest
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from custom_components.inelnet import async_setup_entry, async_unload_entry
+from custom_components.inelnet import area_sync_action, async_setup_entry, async_unload_entry
 from custom_components.inelnet.const import CONF_CHANNELS, CONF_HOST, DOMAIN
-from custom_components.inelnet.dashboard import build_dashboard
 
 
 @pytest.fixture
@@ -68,85 +67,14 @@ async def test_unload_entry_removes_config(
     assert result is True
 
 
-def test_dashboard_has_one_tile_per_shutter() -> None:
-    """Each shutter is its own open/stop/close card, with no group control."""
-    config = build_dashboard(
-        [
-            {"entity_id": "cover.kitchen", "name": "Kitchen", "area": None},
-            {"entity_id": "cover.bedroom", "name": "Bedroom", "area": None},
-        ],
-        "sk",
-    )
-    cards = config["views"][0]["sections"][0]["cards"]
-    assert config["views"][0]["title"] == "Rolety"
-    assert [card["entity"] for card in cards] == ["cover.kitchen", "cover.bedroom"]
-    assert cards[0]["features"] == [{"type": "cover-open-close"}]
+def test_area_sync_fills_an_empty_area_once() -> None:
+    """The first observation places a device only when Home Assistant has no room for it."""
+    assert area_sync_action(None, 1, None, "kitchen") == ("kitchen", True)
+    assert area_sync_action(None, 1, "living", "kitchen") == (None, True)
 
 
-def test_dashboard_groups_rooms() -> None:
-    """Each room is its own section. A shutter without a room stays separate."""
-    config = build_dashboard(
-        [
-            {"entity_id": "cover.a", "name": "A", "area": "Kuchyňa"},
-            {"entity_id": "cover.b", "name": "B", "area": None},
-            {"entity_id": "cover.c", "name": "C", "area": "Kuchyňa"},
-        ],
-        "en",
-    )
-    sections = config["views"][0]["sections"]
-    assert sections[0]["cards"][0]["heading"] == "Kuchyňa"
-    assert [card["entity"] for card in sections[0]["cards"] if card["type"] == "tile"] == [
-        "cover.a",
-        "cover.c",
-    ]
-    assert sections[1]["cards"][0]["heading"] == "No room"
-    assert sections[1]["cards"][1]["entity"] == "cover.b"
-
-
-def test_dashboard_puts_groups_above_rooms_and_pairing_on_its_own_view() -> None:
-    """Controller groups are the first section. Pairing is not on the daily view."""
-    config = build_dashboard(
-        [
-            {
-                "entity_id": "cover.group",
-                "name": "Celý byt",
-                "area": None,
-                "kind": "group",
-                "domain": "cover",
-            },
-            {
-                "entity_id": "cover.room",
-                "name": "Okno",
-                "area": "Living room",
-                "kind": "shutter",
-                "domain": "cover",
-            },
-            {
-                "entity_id": "button.pair",
-                "name": "Okno",
-                "area": "Living room",
-                "kind": "pair",
-                "domain": "button",
-            },
-        ],
-        "sk",
-    )
-    home = config["views"][0]
-    assert home["sections"][0]["cards"][0]["heading"] == "Skupiny"
-    assert home["sections"][0]["cards"][1]["entity"] == "cover.group"
-    assert home["sections"][1]["cards"][0]["heading"] == "Living room"
-    pairing = config["views"][1]
-    assert pairing["title"] == "Párovanie"
-    buttons = [
-        card
-        for section in pairing["sections"]
-        for card in section["cards"]
-        if card["type"] == "button"
-    ]
-    assert buttons[0]["entity"] == "button.pair"
-
-
-def test_dashboard_empty_state() -> None:
-    """An integration with no covers explains that channels are missing."""
-    config = build_dashboard([], "cs")
-    assert "Zatím žádné rolety" in config["views"][0]["cards"][0]["content"]
+def test_area_sync_moves_only_when_the_controller_room_changes() -> None:
+    """A room set in Home Assistant stays until the controller room changes."""
+    assert area_sync_action(1, 1, "living", "kitchen") == (None, False)
+    assert area_sync_action(1, 2, "living", "kitchen") == ("kitchen", True)
+    assert area_sync_action(1, 2, "kitchen", "kitchen") == (None, True)

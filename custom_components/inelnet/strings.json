@@ -25,7 +25,7 @@
           "password": "Password for the controller web page.",
           "username": "Web login from the controller. Leave empty to type channel numbers yourself."
         },
-        "description": "Enter the controller address. With the web login, names, rooms and groups are read from the controller. Without it, enter every channel number separated by commas. A sidebar dashboard is created for them.",
+        "description": "Enter the controller address. With the web login, names, rooms and groups are read from the controller. Without it, enter every channel number separated by commas.",
         "title": "Configure INELNET"
       },
       "reauth_confirm": {
@@ -51,7 +51,7 @@
           "username": "Username"
         },
         "data_description": {
-          "channels": "Used only when the username is empty. The dashboard updates after you save.",
+          "channels": "Used only when the username is empty.",
           "password": "Leave empty to keep the saved password.",
           "username": "Web login from the controller. Clear it to go back to a manual channel list."
         },

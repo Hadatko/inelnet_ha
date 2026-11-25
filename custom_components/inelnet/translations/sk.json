@@ -25,7 +25,7 @@
           "password": "Heslo z webovej stránky jednotky.",
           "username": "Prihlásenie z webu jednotky. Nechaj prázdne, ak chceš čísla kanálov zadať ručne."
         },
-        "description": "Zadaj adresu jednotky. S prihlásením z webu sa natiahnu názvy, miestnosti a skupiny. Bez neho zadaj čísla kanálov oddelené čiarkou. V bočnom paneli pribudne nástenka.",
+        "description": "Zadaj adresu jednotky. S prihlásením z webu sa natiahnu názvy, miestnosti a skupiny. Bez neho zadaj čísla kanálov oddelené čiarkou.",
         "title": "Nastavenie INELNET"
       },
       "reauth_confirm": {

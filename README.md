@@ -2,7 +2,11 @@
 
 Home Assistant integration for an INELNET blinds controller on the local network. Each channel is one shutter. The controller accepts commands and does not report position, so every shutter shows open, stop and close.
 
-The integration adds a sidebar dashboard named **INELNET**. Names, rooms and groups are whatever that controller has stored. Nothing is fixed to one home. With the web login, each room is its own section and that controller's groups are cards at the top. Pairing a remote is on a separate view, so it is not next to the daily open and close buttons.
+Names, rooms and groups are whatever that controller has stored. Nothing is fixed to one home. With the web login, Home Assistant creates a room for each place on the controller. A device that has no room yet is placed there. A room you set yourself stays until that place changes on the controller.
+
+## Version 1.4.0
+
+The integration no longer creates or rewrites a sidebar dashboard. A dashboard that already exists, including one you edited, is left as it is. Add the covers to any dashboard yourself. Devices are no longer moved back to the controller's room on every restart.
 
 If anybody is interested in supporting my "sleepless" nights (working mostly between 23:00-3:00) on different projects press:
 
@@ -16,7 +20,7 @@ Ideas are welcome. But PRs are welcome more ;)
 
 - One cover per channel: open, stop, close. With the controller web login, the name and room come from the controller. Lights and sockets become switches. Venetian blinds also get tilt.
 - One cover per group stored on the controller. The group number is the channel the controller already uses for that group.
-- A generated dashboard with a section per room, the groups above them, and a separate pairing view. Edits you make on that dashboard are replaced when the list of shutters, rooms or groups changes.
+- Rooms from the controller. A device is placed in that room only when it has none yet, and it is moved again only when the room changes on the controller.
 - Pairing is enabled. Short move up and short move down stay disabled until you enable those buttons. The same three actions are available as device actions.
 - Schedules are read from the controller when any exist. The controller still runs them. This integration does not create or delete schedules.
 
@@ -41,7 +45,7 @@ Copy `custom_components/inelnet` into the Home Assistant `config/custom_componen
 
    ![Channel definition when adding the integration](img/channelDef.jpg)
 
-3. Open the **INELNET** dashboard in the sidebar. With a login, rooms are created from the controller and the devices are assigned to them. Without a login, assign a device to a room yourself. The dashboard picks the room up on its own. Pairing is the second view on that dashboard.
+3. With a login, rooms are created from the controller. A device that has no room is assigned to the controller's room. If you move a device in Home Assistant, that choice stays until the room changes on the controller. Add the covers to a dashboard yourself. Pairing is a button on each device.
 
    ![Assigning a channel to a room](img/channelRoom.png)
 
